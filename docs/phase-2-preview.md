@@ -4,13 +4,14 @@ Phase 2 should add the HDR pipeline without changing the structure-locked premis
 
 ## Uploads
 
-- Batch upload originals into the storage adapter.
-- Record assets with storage key, filename, MIME type, file size, dimensions, and EXIF fields.
+- Phase 2A implemented batch upload originals into the storage adapter.
+- Phase 2A records assets with storage key, filename, MIME type, file size, dimensions, and EXIF fields when available.
 - Keep local storage first, with object storage as a future adapter.
 
 ## EXIF Extraction
 
-- Extract capture time, camera model, lens model, exposure time, aperture, ISO, and exposure bias.
+- Phase 2A extracts JPEG capture time, camera model, lens model, exposure time, aperture, ISO, exposure bias, width, and height when present.
+- RAW/TIFF files are accepted and stored now; RAW metadata support remains fixture-pending.
 - Preserve raw metadata in `assets.raw_metadata`.
 - Do not modify original files during metadata extraction.
 
@@ -20,16 +21,18 @@ Phase 2 should add the HDR pipeline without changing the structure-locked premis
 - Support Canon EOS R5 RAW/JPEG 3-shot brackets.
 - Support DJI Mini 4K class RAW/JPEG brackets.
 - Group by EXIF capture time and exposure characteristics.
-- Store confidence and grouping reason.
+- Phase 2A stores confidence and grouping reason.
 
 ## Review UI
 
-- Show detected bracket groups.
-- Let the admin approve, reject, or adjust groups.
+- Phase 2A shows detected bracket groups.
+- Phase 2A lets the admin approve or reject groups.
+- Manual group adjustment is still planned.
 - Keep review state in `bracket_groups`.
 
 ## PhotomatixCL Worker
 
+- Not implemented in Phase 2A.
 - Add a worker service after the grouping and review contracts are stable.
 - Use `HdrEngine` as the integration seam.
 - Store redacted command text in `hdr_jobs.command_redacted`.

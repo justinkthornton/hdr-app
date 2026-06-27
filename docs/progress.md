@@ -22,3 +22,10 @@
 - Added `docs/security.md` covering ignored env files, 1Password local secrets, private-repo expectations, and items that must not be committed.
 - Rebuilt the Docker Compose stack after hardening: Postgres was healthy, `migrate` exited `0`, and `web` ran on port `3000`.
 - Hardening checks passed: `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm format`, `pnpm db:migrate`, and `pnpm smoke:phase1`.
+- Built Phase 2A upload and review flow: `LocalVolumeStorage`, JPEG metadata extraction, RAW/TIFF partial-storage handling, deterministic bracket grouping, admin upload/review UI, admin endpoints, and `/api/v1` asset/group review endpoints.
+- Added Phase 2A tests for storage path safety, filename sanitization, JPEG metadata extraction, RAW partial metadata behavior, clean 7-shot grouping, clean 3-shot grouping, mixed groups, missing capture time, mixed camera models, extra files, upload handler behavior, review handlers, and API-key proxy protection.
+- Updated Phase 2A docs and fixture guidance: `docs/phase-2a.md`, API docs, MCP-style REST contract, Phase 2 preview, README, and fixture README files.
+- Verified Phase 2A static gates: `pnpm test` passed 12 files / 40 tests, `pnpm lint` passed, `pnpm build` passed, and `pnpm format` passed.
+- Verified Phase 2A runtime gates: `pnpm db:migrate` reported no migrations to apply, `docker compose up --build -d` rebuilt and started the stack, and `docker compose ps -a` showed Postgres healthy, `migrate` exited `0`, and `web` running on port `3000`.
+- Live synthetic JPEG validation passed against the running app: login, create shoot, upload 3 generated JPEGs, list assets, list bracket groups, approve group, reject group, and API-key list groups all succeeded. Real non-client JPEG bracket fixture validation remains pending until fixtures are supplied.
+- Re-ran `pnpm smoke:phase1`; Phase 1 smoke still passed after Phase 2A changes.

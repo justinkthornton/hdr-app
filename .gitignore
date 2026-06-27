@@ -10,3 +10,4 @@ Dockerfile.local
 .DS_Store
 /data/
 /storage/
+fixtures/phase-2a/local/

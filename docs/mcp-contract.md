@@ -1,6 +1,6 @@
 # MCP-Style REST Contract
 
-Phase 1 does not implement a true MCP server. Hermes can treat these as REST-backed tool shapes later.
+The app does not implement a true MCP server. Hermes can treat these as REST-backed tool shapes.
 
 ## Implemented
 
@@ -72,19 +72,35 @@ Output:
 }
 ```
 
-## Planned
+## Implemented In Phase 2A
 
-### create_upload_batch
+### list_assets
 
-Planned REST backing: `POST /api/v1/shoots/:shootId/upload-batches`
+REST backing: `GET /api/v1/shoots/:shootId/assets`
 
 ### list_bracket_groups
 
-Planned REST backing: `GET /api/v1/shoots/:shootId/bracket-groups`
+REST backing: `GET /api/v1/shoots/:shootId/bracket-groups`
+
+### get_bracket_group
+
+REST backing: `GET /api/v1/bracket-groups/:bracketGroupId`
 
 ### approve_bracket_group
 
-Planned REST backing: `POST /api/v1/bracket-groups/:bracketGroupId/approve`
+REST backing: `POST /api/v1/bracket-groups/:bracketGroupId/approve`
+
+### reject_bracket_group
+
+REST backing: `POST /api/v1/bracket-groups/:bracketGroupId/reject`
+
+### create_upload_batch
+
+REST backing: `POST /api/v1/shoots/:shootId/uploads`
+
+This endpoint is implemented as a multipart REST upload. A future Hermes tool wrapper can call it when file transfer semantics are settled.
+
+## Still Planned
 
 ### create_hdr_job
 
@@ -98,10 +114,6 @@ Planned REST backing: `GET /api/v1/hdr-jobs/:hdrJobId`
 
 Planned REST backing: `POST /api/v1/hdr-jobs/:hdrJobId/rerun`
 
-### tag_shoot
-
-Planned REST backing: `PATCH /api/v1/shoots/:shootId`
-
 ### list_exports
 
 Planned REST backing: `GET /api/v1/shoots/:shootId/exports`
@@ -110,6 +122,6 @@ Planned REST backing: `GET /api/v1/shoots/:shootId/exports`
 
 All `/api/v1/*` calls require `x-api-key`.
 
-## Phase 1 Boundary
+## Boundary
 
-The contract is documentation only. There is no MCP server, no runtime AI model call, and no Codex credential path inside the app.
+There is no MCP server, no runtime AI model call, and no Codex credential path inside the app.

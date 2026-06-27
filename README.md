@@ -1,12 +1,12 @@
 # Structure-Locked HDR Service
 
-Internal real estate HDR processing service foundation. Phase 1 builds the local-first TypeScript app, database schema, admin UI, REST control surface, and documentation. Image upload, EXIF grouping, PhotomatixCL processing, worker execution, and exports are intentionally deferred to Phase 2.
+Internal real estate HDR processing service foundation. Phase 2A adds local batch upload, JPEG metadata extraction, EXIF-time bracket grouping, and review/approval UI. PhotomatixCL processing, worker execution, reruns, and exports are still intentionally deferred.
 
 ## Stack
 
 - pnpm workspace for a small TypeScript monorepo.
 - Next.js, React, and TypeScript in `apps/web`.
-- Shared contracts, validation, auth helpers, database helpers, and future adapter seams in `packages/core`.
+- Shared contracts, validation, auth helpers, database helpers, local storage, metadata extraction, bracket grouping, and future adapter seams in `packages/core`.
 - Placeholder worker package in `packages/worker`.
 - Postgres via `pg`.
 - SQL migration files in `db/migrations`.
@@ -40,7 +40,7 @@ LOCAL_STORAGE_ROOT=/data/storage
 PHOTOMATIX_LICENSE_KEY=
 ```
 
-`ADMIN_PASSWORD` is only for login validation. `ADMIN_SESSION_SECRET` signs the admin session cookie and must be a separate secret. `PHOTOMATIX_LICENSE_KEY` is a Phase 2 placeholder and is not used by Phase 1 code.
+`ADMIN_PASSWORD` is only for login validation. `ADMIN_SESSION_SECRET` signs the admin session cookie and must be a separate secret. `PHOTOMATIX_LICENSE_KEY` is reserved for later PhotomatixCL work and is not used by Phase 2A code.
 
 ## Docker Compose
 
@@ -113,10 +113,11 @@ pnpm test
 pnpm lint
 pnpm build
 pnpm format
+pnpm db:migrate
 pnpm smoke:phase1
 ```
 
-## Phase 1 Scope
+## Phase 2A Scope
 
 Included:
 
@@ -125,19 +126,24 @@ Included:
 - Local admin password auth for UI routes.
 - API-key auth for `/api/v1/*`.
 - REST endpoints for health and shoots.
-- Basic admin UI.
-- Adapter seams for future auth, storage, and HDR engine work.
-- Documentation for API, auth, security, Render shape, MCP-style REST contract, and Phase 2 preview.
+- Batch upload UI on shoot detail pages.
+- LocalVolumeStorage-backed original file storage.
+- Admin and API-key upload endpoints.
+- JPEG metadata extraction with RAW/TIFF partial-storage support.
+- Deterministic 7-shot, 3-shot, and ambiguous bracket grouping.
+- Asset and bracket group review UI.
+- Admin and API-key endpoints for listing assets/groups and approving/rejecting groups.
+- Adapter seams for future auth, storage, HDR engine, and worker work.
+- Documentation for API, auth, security, Phase 2A, Render shape, MCP-style REST contract, and Phase 2 preview.
 
 Not included:
 
-- Image upload.
-- EXIF extraction.
-- Bracket grouping.
 - PhotomatixCL worker.
 - Export generation.
+- HDR job creation.
+- Reruns.
 - Better Auth, OAuth, true MCP server, or runtime AI calls.
 
 ## Phase 2 Preview
 
-Phase 2 will add batch upload, EXIF capture-time grouping, 7-shot and 3-shot review flows, PhotomatixCL jobs, MLS/full JPEG exports, optional TIFF export, and fixture-driven RAW/JPEG testing.
+Later Phase 2 work will add PhotomatixCL jobs, MLS/full JPEG exports, optional TIFF export, reruns, worker processing, and broader RAW fixture validation.

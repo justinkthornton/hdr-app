@@ -6,6 +6,7 @@ export type StorageObjectMetadata = {
 export type StoredObject = {
   key: string;
   metadata: StorageObjectMetadata;
+  body?: Buffer;
 };
 
 export interface StorageAdapter {
