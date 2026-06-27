@@ -33,11 +33,11 @@
 - [x] Phase 2 preview docs exist.
 - [x] Tests pass.
 - [x] Phase 1 runtime smoke script exists.
-- [ ] Migrations have been run against local Postgres.
-- [ ] Docker Compose has been started and verified.
+- [x] Migrations have been run against local Postgres.
+- [x] Docker Compose has been started and verified.
 - [x] Admin login has been manually or smoke-test verified against a running app.
 - [x] `/api/v1/health` has been verified against a running app.
-- [ ] Shoot create/list endpoints have been verified against a running app.
+- [x] Shoot create/list endpoints have been verified against a running app.
 - [x] `docs/progress.md` is updated.
 
 ## Known Limitations
@@ -60,15 +60,20 @@ Passed on 2026-06-27:
 - `pnpm format`
 - `pnpm build`
 - Static Docker setup review: Compose now waits for Postgres health, runs `pnpm db:migrate` through a one-shot `migrate` service, then starts web.
+- Root runtime scripts load the ignored 1Password-mounted `.env` file without printing values.
 - `scripts/smoke-phase-1.mjs` exists to verify health auth, admin login/session, API-key shoot create/list/get, and admin shoot update against a running stack.
 - Running app smoke: `GET /api/v1/health` returned `200` with a valid `x-api-key`.
 - Running app smoke: `GET /api/v1/health` returned `401` without `x-api-key`.
 - Running app smoke: `POST /api/admin/login` returned `200` and set an HTTP-only admin session cookie.
 
-Blocked on 2026-06-27:
+Resolved on 2026-06-27:
 
-- `docker` and `docker compose` were not available from this environment.
-- `psql` and `pg_isready` were not available from this environment.
-- `pnpm db:migrate` reached the database connection path, then failed with `ECONNREFUSED` for `127.0.0.1:5432` and `::1:5432`.
-- Running app smoke for `GET /api/v1/shoots` and `POST /api/v1/shoots` returned `500` because Postgres was not reachable.
-- `pnpm smoke:phase1` could not be completed in this environment because it requires a running app backed by reachable Postgres.
+- 1Password Environment `HDR app` was located through the 1Password MCP server.
+- Required variable names were present after adding an empty Phase 1 placeholder for `PHOTOMATIX_LICENSE_KEY`.
+- The 1Password Environment was mounted to the ignored local `.env` path.
+- `docker compose version` and `docker info` passed.
+- `docker compose up --build -d` started the local stack.
+- `docker compose ps -a` showed Postgres healthy, the migration service exited `0`, and web running on port `3000`.
+- `pnpm db:migrate` passed against live local Docker Postgres.
+- `pnpm smoke:phase1` passed against the running app and database.
+- Final gates passed: `pnpm test`, `pnpm lint`, `pnpm build`, and `pnpm format`.

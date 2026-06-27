@@ -14,3 +14,5 @@
 - Documented runtime blocker: Docker, Postgres CLI tools, and local Postgres were unavailable, so migrations and database-backed shoot endpoint smoke checks could not pass locally.
 - Tightened Docker local runtime: added `.dockerignore`, added one-shot `migrate` service, and made Docker Compose start web only after migrations complete.
 - Added `pnpm smoke:phase1` to validate the full Phase 1 runtime surface once Docker/Postgres are available.
+- Added a local env runner so root runtime scripts can consume the ignored 1Password-mounted `.env` file without printing or committing secret values.
+- Completed Phase 1 runtime validation with the 1Password Environment `HDR app`: Docker Compose started web/Postgres, migrations passed, the Phase 1 smoke test passed, and final test/lint/build/format gates passed.

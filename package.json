@@ -12,9 +12,9 @@
     "lint": "eslint .",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
-    "db:migrate": "pnpm --filter @structure-locked-hdr/core db:migrate",
-    "db:reset": "pnpm --filter @structure-locked-hdr/core db:reset",
-    "smoke:phase1": "node scripts/smoke-phase-1.mjs"
+    "db:migrate": "node scripts/run-with-local-env.mjs pnpm --filter @structure-locked-hdr/core db:migrate",
+    "db:reset": "node scripts/run-with-local-env.mjs pnpm --filter @structure-locked-hdr/core db:reset",
+    "smoke:phase1": "node scripts/run-with-local-env.mjs node scripts/smoke-phase-1.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

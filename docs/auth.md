@@ -18,6 +18,25 @@ Phase 1 uses two intentionally small auth paths: one local admin password for th
 - The key is never logged or returned.
 - `packages/core` includes a hash/check helper for later persistent API-key storage.
 
+## 1Password Environment Workflow
+
+For local Phase 1 runtime validation, mount the 1Password Environment named `HDR app` to the repo's ignored `.env` path:
+
+```text
+/Users/justinthornton/Documents/Codex Apps/HDR app/.env
+```
+
+Required variable names:
+
+- `DATABASE_URL`
+- `ADMIN_PASSWORD`
+- `API_KEY`
+- `STORAGE_DRIVER`
+- `LOCAL_STORAGE_ROOT`
+- `PHOTOMATIX_LICENSE_KEY` may be absent or empty for Phase 1 because PhotomatixCL is not used yet.
+
+Do not commit `.env` or print secret values. The root `db:migrate`, `db:reset`, and `smoke:phase1` scripts load the ignored `.env` file for their child processes without displaying values.
+
 ## AuthAdapter Seam
 
 `packages/core/src/auth/adapter.ts` defines an `AuthAdapter` interface for later parent-app, Better Auth, or OAuth integration. The Phase 1 local adapter is a placeholder and does not authenticate users.

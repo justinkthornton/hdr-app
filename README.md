@@ -67,7 +67,7 @@ Run migrations against the configured `DATABASE_URL`:
 pnpm db:migrate
 ```
 
-When using Docker Compose, migrations run automatically through the `migrate` service before the web service starts.
+The root `db:migrate` script loads values from the ignored local `.env` file when it exists. When using Docker Compose, migrations also run automatically through the `migrate` service before the web service starts.
 
 Reset the local database only when you intentionally want to drop local data:
 
@@ -88,12 +88,12 @@ Open `http://localhost:3000`, sign in with `ADMIN_PASSWORD`, and create/list sho
 After the app and Postgres are running and migrations have completed, validate the Phase 1 runtime surface:
 
 ```bash
-API_KEY=replace-with-a-local-api-key \
-ADMIN_PASSWORD=replace-with-a-local-admin-password \
 pnpm smoke:phase1
 ```
 
 Set `BASE_URL` if the app is not running at `http://localhost:3000`.
+
+The root `smoke:phase1` script loads `API_KEY` and `ADMIN_PASSWORD` from the ignored local `.env` file when it exists.
 
 The smoke test checks:
 
