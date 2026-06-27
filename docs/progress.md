@@ -16,3 +16,9 @@
 - Added `pnpm smoke:phase1` to validate the full Phase 1 runtime surface once Docker/Postgres are available.
 - Added a local env runner so root runtime scripts can consume the ignored 1Password-mounted `.env` file without printing or committing secret values.
 - Completed Phase 1 runtime validation with the 1Password Environment `HDR app`: Docker Compose started web/Postgres, migrations passed, the Phase 1 smoke test passed, and final test/lint/build/format gates passed.
+- Hardened Phase 1 before Phase 2: removed Docker Compose fallback admin/API credentials, added required `ADMIN_SESSION_SECRET`, and separated admin password login validation from admin session cookie signing.
+- Added `ADMIN_SESSION_SECRET` to the 1Password Environment `HDR app` and confirmed the mounted ignored `.env` exposes required auth variable names without printing values.
+- Added explicit Next proxy tests for valid, missing, and invalid `x-api-key` handling on `/api/v1/*`.
+- Added `docs/security.md` covering ignored env files, 1Password local secrets, private-repo expectations, and items that must not be committed.
+- Rebuilt the Docker Compose stack after hardening: Postgres was healthy, `migrate` exited `0`, and `web` ran on port `3000`.
+- Hardening checks passed: `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm format`, `pnpm db:migrate`, and `pnpm smoke:phase1`.

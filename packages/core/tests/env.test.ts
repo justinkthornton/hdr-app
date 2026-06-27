@@ -6,6 +6,7 @@ describe("runtime env validation", () => {
     const env = parseRuntimeEnv({
       DATABASE_URL: "postgres://hdr:hdr@localhost:5432/structure_locked_hdr",
       ADMIN_PASSWORD: "secret-admin",
+      ADMIN_SESSION_SECRET: "test-session-secret-at-least-32-characters",
       API_KEY: "secret-api-key",
       STORAGE_DRIVER: "local",
       LOCAL_STORAGE_ROOT: "/data/storage",
@@ -20,6 +21,7 @@ describe("runtime env validation", () => {
     expect(() =>
       parseRuntimeEnv({
         DATABASE_URL: "postgres://hdr:hdr@localhost:5432/structure_locked_hdr",
+        ADMIN_SESSION_SECRET: "test-session-secret-at-least-32-characters",
         STORAGE_DRIVER: "local",
         LOCAL_STORAGE_ROOT: "/data/storage"
       })

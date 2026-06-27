@@ -3,6 +3,7 @@ import { z } from "zod";
 export const runtimeEnvSchema = z.object({
   DATABASE_URL: z.string().min(1),
   ADMIN_PASSWORD: z.string().min(1),
+  ADMIN_SESSION_SECRET: z.string().min(32),
   API_KEY: z.string().min(1),
   STORAGE_DRIVER: z.enum(["local"]).default("local"),
   LOCAL_STORAGE_ROOT: z.string().min(1).default("/data/storage"),

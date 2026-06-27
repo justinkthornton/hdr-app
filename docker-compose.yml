@@ -8,8 +8,9 @@ services:
       - "3000:3000"
     environment:
       DATABASE_URL: postgres://hdr:hdr@postgres:5432/structure_locked_hdr
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-local-admin-password}
-      API_KEY: ${API_KEY:-local-api-key}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}
+      ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET:?ADMIN_SESSION_SECRET is required}
+      API_KEY: ${API_KEY:?API_KEY is required}
       STORAGE_DRIVER: local
       LOCAL_STORAGE_ROOT: /data/storage
       PHOTOMATIX_LICENSE_KEY: ${PHOTOMATIX_LICENSE_KEY:-}
@@ -27,8 +28,9 @@ services:
     command: ["pnpm", "db:migrate"]
     environment:
       DATABASE_URL: postgres://hdr:hdr@postgres:5432/structure_locked_hdr
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-local-admin-password}
-      API_KEY: ${API_KEY:-local-api-key}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}
+      ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET:?ADMIN_SESSION_SECRET is required}
+      API_KEY: ${API_KEY:?API_KEY is required}
       STORAGE_DRIVER: local
       LOCAL_STORAGE_ROOT: /data/storage
       PHOTOMATIX_LICENSE_KEY: ${PHOTOMATIX_LICENSE_KEY:-}

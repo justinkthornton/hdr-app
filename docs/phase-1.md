@@ -12,7 +12,7 @@
 - Auth, storage, and HDR engine adapter seams.
 - Placeholder worker package.
 - Docker Compose with web, one-shot migration service, Postgres, Postgres volume, and local storage volume.
-- API, auth, MCP-style contract, Render, Phase 2, fixture, and progress docs.
+- API, auth, security, MCP-style contract, Render, Phase 2, fixture, and progress docs.
 
 ## Acceptance Checklist
 
@@ -28,6 +28,7 @@
 - [x] README exists.
 - [x] API docs exist.
 - [x] Auth docs exist.
+- [x] Security docs exist.
 - [x] MCP-style REST contract exists.
 - [x] Render-shaped docs exist.
 - [x] Phase 2 preview docs exist.
@@ -62,6 +63,8 @@ Passed on 2026-06-27:
 - Static Docker setup review: Compose now waits for Postgres health, runs `pnpm db:migrate` through a one-shot `migrate` service, then starts web.
 - Root runtime scripts load the ignored 1Password-mounted `.env` file without printing values.
 - `scripts/smoke-phase-1.mjs` exists to verify health auth, admin login/session, API-key shoot create/list/get, and admin shoot update against a running stack.
+- Admin session cookies are signed with `ADMIN_SESSION_SECRET`; `ADMIN_PASSWORD` is only used for login validation.
+- Docker Compose requires `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, and `API_KEY` rather than falling back to local default credentials.
 - Running app smoke: `GET /api/v1/health` returned `200` with a valid `x-api-key`.
 - Running app smoke: `GET /api/v1/health` returned `401` without `x-api-key`.
 - Running app smoke: `POST /api/admin/login` returned `200` and set an HTTP-only admin session cookie.

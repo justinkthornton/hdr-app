@@ -7,7 +7,8 @@ Phase 1 uses two intentionally small auth paths: one local admin password for th
 - The UI login posts to `/api/admin/login`.
 - The password is compared with `ADMIN_PASSWORD`.
 - A signed HTTP-only cookie stores the local admin session.
-- Session signing uses `ADMIN_PASSWORD`, so changing the password invalidates existing sessions.
+- Session signing uses `ADMIN_SESSION_SECRET`, not `ADMIN_PASSWORD`.
+- `ADMIN_PASSWORD` should only validate login attempts. `ADMIN_SESSION_SECRET` should be a separate random secret of at least 32 characters.
 - There is no user table and no multi-user auth in Phase 1.
 
 ## API Key
@@ -30,12 +31,15 @@ Required variable names:
 
 - `DATABASE_URL`
 - `ADMIN_PASSWORD`
+- `ADMIN_SESSION_SECRET`
 - `API_KEY`
 - `STORAGE_DRIVER`
 - `LOCAL_STORAGE_ROOT`
 - `PHOTOMATIX_LICENSE_KEY` may be absent or empty for Phase 1 because PhotomatixCL is not used yet.
 
 Do not commit `.env` or print secret values. The root `db:migrate`, `db:reset`, and `smoke:phase1` scripts load the ignored `.env` file for their child processes without displaying values.
+
+Docker Compose requires `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, and `API_KEY`. It does not provide fallback admin credentials.
 
 ## AuthAdapter Seam
 

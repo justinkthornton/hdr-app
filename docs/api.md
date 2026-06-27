@@ -31,11 +31,11 @@ Body:
 
 ```json
 {
-  "password": "local-admin-password"
+  "password": "value-from-ADMIN_PASSWORD"
 }
 ```
 
-Sets an HTTP-only admin session cookie when the password matches `ADMIN_PASSWORD`.
+Sets an HTTP-only admin session cookie when the password matches `ADMIN_PASSWORD`. The cookie is signed with `ADMIN_SESSION_SECRET`.
 
 ### POST /api/admin/logout
 

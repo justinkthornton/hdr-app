@@ -19,6 +19,7 @@ Render deployment is not required for Phase 1 acceptance.
 
 - `DATABASE_URL`
 - `ADMIN_PASSWORD`
+- `ADMIN_SESSION_SECRET`
 - `API_KEY`
 - `STORAGE_DRIVER`
 - `LOCAL_STORAGE_ROOT`

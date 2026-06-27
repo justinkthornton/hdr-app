@@ -32,14 +32,15 @@ cp .env.example .env
 
 ```bash
 DATABASE_URL=postgres://hdr:hdr@localhost:5432/structure_locked_hdr
-ADMIN_PASSWORD=replace-with-a-local-admin-password
-API_KEY=replace-with-a-local-api-key
+ADMIN_PASSWORD=replace-with-admin-password
+ADMIN_SESSION_SECRET=replace-with-a-random-session-secret-32-chars-min
+API_KEY=replace-with-api-key
 STORAGE_DRIVER=local
 LOCAL_STORAGE_ROOT=/data/storage
 PHOTOMATIX_LICENSE_KEY=
 ```
 
-`PHOTOMATIX_LICENSE_KEY` is a Phase 2 placeholder and is not used by Phase 1 code.
+`ADMIN_PASSWORD` is only for login validation. `ADMIN_SESSION_SECRET` signs the admin session cookie and must be a separate secret. `PHOTOMATIX_LICENSE_KEY` is a Phase 2 placeholder and is not used by Phase 1 code.
 
 ## Docker Compose
 
@@ -58,6 +59,8 @@ The Compose file defines:
 - `local_storage`: named placeholder volume for Phase 2 file storage.
 
 The stack is configured for Apple Silicon with `linux/arm64` images.
+
+`ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, and `API_KEY` are required by Compose. The stack should fail to start if any of them are missing.
 
 ## Database
 
@@ -93,7 +96,7 @@ pnpm smoke:phase1
 
 Set `BASE_URL` if the app is not running at `http://localhost:3000`.
 
-The root `smoke:phase1` script loads `API_KEY` and `ADMIN_PASSWORD` from the ignored local `.env` file when it exists.
+The root `smoke:phase1` script loads `API_KEY`, `ADMIN_PASSWORD`, and `ADMIN_SESSION_SECRET` from the ignored local `.env` file when it exists.
 
 The smoke test checks:
 
@@ -124,7 +127,7 @@ Included:
 - REST endpoints for health and shoots.
 - Basic admin UI.
 - Adapter seams for future auth, storage, and HDR engine work.
-- Documentation for API, auth, Render shape, MCP-style REST contract, and Phase 2 preview.
+- Documentation for API, auth, security, Render shape, MCP-style REST contract, and Phase 2 preview.
 
 Not included:
 

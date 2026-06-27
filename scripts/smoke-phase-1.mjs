@@ -1,6 +1,7 @@
 const baseUrl = process.env.BASE_URL ?? "http://localhost:3000";
 const apiKey = process.env.API_KEY;
 const adminPassword = process.env.ADMIN_PASSWORD;
+const adminSessionSecret = process.env.ADMIN_SESSION_SECRET;
 
 if (!apiKey) {
   throw new Error("API_KEY is required for the Phase 1 smoke test.");
@@ -8,6 +9,10 @@ if (!apiKey) {
 
 if (!adminPassword) {
   throw new Error("ADMIN_PASSWORD is required for the Phase 1 smoke test.");
+}
+
+if (!adminSessionSecret) {
+  throw new Error("ADMIN_SESSION_SECRET is required for the Phase 1 smoke test.");
 }
 
 function url(path) {

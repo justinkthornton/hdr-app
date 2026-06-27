@@ -15,9 +15,9 @@ function makeRequest(apiKey?: string): NextRequest {
 
 describe("/api/v1 health auth", () => {
   it("allows a valid x-api-key through middleware and returns health", async () => {
-    process.env.API_KEY = "local-api-key";
+    process.env.API_KEY = "valid-test-api-key";
 
-    const gate = proxy(makeRequest("local-api-key"));
+    const gate = proxy(makeRequest("valid-test-api-key"));
     const response = await getHealth();
     const body = (await response.json()) as { ok: boolean; pipelineEnabled: boolean };
 
@@ -26,10 +26,15 @@ describe("/api/v1 health auth", () => {
     expect(body.pipelineEnabled).toBe(false);
   });
 
-  it("rejects missing or invalid x-api-key values", async () => {
-    process.env.API_KEY = "local-api-key";
+  it("rejects a missing x-api-key", async () => {
+    process.env.API_KEY = "valid-test-api-key";
 
     expect(proxy(makeRequest()).status).toBe(401);
+  });
+
+  it("rejects an invalid x-api-key", async () => {
+    process.env.API_KEY = "valid-test-api-key";
+
     expect(proxy(makeRequest("wrong")).status).toBe(401);
   });
 });

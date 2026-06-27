@@ -7,7 +7,7 @@ import { getCookieValue, jsonResponse } from "./http";
 
 export function isAdminRequest(request: Request): boolean {
   const token = getCookieValue(request.headers.get("cookie"), ADMIN_SESSION_COOKIE);
-  return verifyAdminSessionToken(token, getRequiredEnv("ADMIN_PASSWORD"));
+  return verifyAdminSessionToken(token, getRequiredEnv("ADMIN_SESSION_SECRET"));
 }
 
 export function requireAdminRequest(request: Request): Response | null {

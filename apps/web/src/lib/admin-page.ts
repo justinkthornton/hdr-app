@@ -10,7 +10,7 @@ export async function requireAdminPage(): Promise<void> {
   const cookieStore = await cookies();
   const token = cookieStore.get(ADMIN_SESSION_COOKIE)?.value;
 
-  if (!verifyAdminSessionToken(token, getRequiredEnv("ADMIN_PASSWORD"))) {
+  if (!verifyAdminSessionToken(token, getRequiredEnv("ADMIN_SESSION_SECRET"))) {
     redirect("/login");
   }
 }
