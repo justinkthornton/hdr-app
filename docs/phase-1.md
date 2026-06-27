@@ -11,14 +11,14 @@
 - `pg` database helpers and shoot repository functions.
 - Auth, storage, and HDR engine adapter seams.
 - Placeholder worker package.
-- Docker Compose with web, Postgres, Postgres volume, and local storage volume.
+- Docker Compose with web, one-shot migration service, Postgres, Postgres volume, and local storage volume.
 - API, auth, MCP-style contract, Render, Phase 2, fixture, and progress docs.
 
 ## Acceptance Checklist
 
 - [x] Repo skeleton exists.
 - [x] TypeScript, linting, formatting, and tests are configured.
-- [x] Docker Compose defines web and Postgres.
+- [x] Docker Compose defines web, migration, and Postgres services.
 - [x] SQL migrations exist.
 - [x] Admin password login is implemented.
 - [x] API-key middleware is implemented.
@@ -58,6 +58,7 @@ Passed on 2026-06-27:
 - `pnpm lint`
 - `pnpm format`
 - `pnpm build`
+- Static Docker setup review: Compose now waits for Postgres health, runs `pnpm db:migrate` through a one-shot `migrate` service, then starts web.
 - Running app smoke: `GET /api/v1/health` returned `200` with a valid `x-api-key`.
 - Running app smoke: `GET /api/v1/health` returned `401` without `x-api-key`.
 - Running app smoke: `POST /api/admin/login` returned `200` and set an HTTP-only admin session cookie.

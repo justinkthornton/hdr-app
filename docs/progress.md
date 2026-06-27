@@ -12,3 +12,4 @@
 - Verified `pnpm test`, `pnpm lint`, `pnpm format`, and `pnpm build`.
 - Smoke-tested running app health API and admin login.
 - Documented runtime blocker: Docker, Postgres CLI tools, and local Postgres were unavailable, so migrations and database-backed shoot endpoint smoke checks could not pass locally.
+- Tightened Docker local runtime: added `.dockerignore`, added one-shot `migrate` service, and made Docker Compose start web only after migrations complete.

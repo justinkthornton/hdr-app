@@ -16,6 +16,23 @@ services:
     volumes:
       - local_storage:/data/storage
     depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  migrate:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+    platform: linux/arm64
+    command: ["pnpm", "db:migrate"]
+    environment:
+      DATABASE_URL: postgres://hdr:hdr@postgres:5432/structure_locked_hdr
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-local-admin-password}
+      API_KEY: ${API_KEY:-local-api-key}
+      STORAGE_DRIVER: local
+      LOCAL_STORAGE_ROOT: /data/storage
+      PHOTOMATIX_LICENSE_KEY: ${PHOTOMATIX_LICENSE_KEY:-}
+    depends_on:
       postgres:
         condition: service_healthy
 

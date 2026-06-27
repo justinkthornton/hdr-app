@@ -52,6 +52,7 @@ docker compose up --build
 The Compose file defines:
 
 - `web`: Next.js development service.
+- `migrate`: one-shot SQL migration service that runs after Postgres is healthy and before `web` starts.
 - `postgres`: Postgres service.
 - `postgres_data`: named Postgres volume.
 - `local_storage`: named placeholder volume for Phase 2 file storage.
@@ -65,6 +66,8 @@ Run migrations against the configured `DATABASE_URL`:
 ```bash
 pnpm db:migrate
 ```
+
+When using Docker Compose, migrations run automatically through the `migrate` service before the web service starts.
 
 Reset the local database only when you intentionally want to drop local data:
 
