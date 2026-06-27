@@ -13,6 +13,9 @@ services:
       API_KEY: ${API_KEY:?API_KEY is required}
       STORAGE_DRIVER: local
       LOCAL_STORAGE_ROOT: /data/storage
+      MAX_UPLOAD_FILES: ${MAX_UPLOAD_FILES:-9}
+      MAX_UPLOAD_FILE_BYTES: ${MAX_UPLOAD_FILE_BYTES:-104857600}
+      MAX_UPLOAD_BATCH_BYTES: ${MAX_UPLOAD_BATCH_BYTES:-524288000}
       PHOTOMATIX_LICENSE_KEY: ${PHOTOMATIX_LICENSE_KEY:-}
     volumes:
       - local_storage:/data/storage
@@ -33,6 +36,9 @@ services:
       API_KEY: ${API_KEY:?API_KEY is required}
       STORAGE_DRIVER: local
       LOCAL_STORAGE_ROOT: /data/storage
+      MAX_UPLOAD_FILES: ${MAX_UPLOAD_FILES:-9}
+      MAX_UPLOAD_FILE_BYTES: ${MAX_UPLOAD_FILE_BYTES:-104857600}
+      MAX_UPLOAD_BATCH_BYTES: ${MAX_UPLOAD_BATCH_BYTES:-524288000}
       PHOTOMATIX_LICENSE_KEY: ${PHOTOMATIX_LICENSE_KEY:-}
     depends_on:
       postgres:

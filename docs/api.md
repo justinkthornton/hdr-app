@@ -98,6 +98,12 @@ Admin session required.
 
 Admin session required. Accepts `multipart/form-data` with one or more `files` entries.
 
+Upload limits are enforced before storage or asset rows are written:
+
+- `MAX_UPLOAD_FILES`, default `9`
+- `MAX_UPLOAD_FILE_BYTES`, default `104857600`
+- `MAX_UPLOAD_BATCH_BYTES`, default `524288000`
+
 Accepted extensions:
 
 - `.jpg`
@@ -127,9 +133,21 @@ Response:
 
 JPEG metadata extraction runs during upload. RAW/TIFF files are accepted and stored; metadata may be partial until fixtures and parser support are added.
 
+Limit failures return:
+
+```json
+{
+  "error": "too_many_files"
+}
+```
+
+Other upload limit errors are `file_too_large` and `batch_too_large`. Unsupported extensions return `unsupported_file_type`.
+
+If a later asset or group write fails after storage writes, the handler attempts to delete storage objects written by that request and returns `upload_failed`.
+
 ### GET /api/shoots/:shootId/assets
 
-Admin session required. Lists uploaded originals and extracted metadata.
+Admin session required. Lists uploaded originals and extracted metadata. Admin asset responses include internal `storageKey` and `rawMetadata` fields for the local review UI.
 
 ### GET /api/shoots/:shootId/bracket-groups
 
@@ -173,27 +191,27 @@ Requires `x-api-key`. Same response shape as `GET /api/shoots/:shootId`.
 
 ### POST /api/v1/shoots/:shootId/uploads
 
-Requires `x-api-key`. Same multipart behavior and response shape as `POST /api/shoots/:shootId/uploads`.
+Requires `x-api-key`. Same multipart behavior as `POST /api/shoots/:shootId/uploads`. Asset objects in the response omit internal `storageKey` and broad `rawMetadata` fields.
 
 ### GET /api/v1/shoots/:shootId/assets
 
-Requires `x-api-key`. Same response shape as `GET /api/shoots/:shootId/assets`.
+Requires `x-api-key`. Lists uploaded originals and extracted metadata, but omits internal `storageKey` and broad `rawMetadata` fields by default. Public asset fields include `originalFilename`, `mimeType`, `fileExt`, `fileSizeBytes`, `width`, `height`, `cameraModel`, `lensModel`, `capturedAt`, `exposureTime`, `aperture`, `iso`, `exposureBias`, and `extractionStatus`.
 
 ### GET /api/v1/shoots/:shootId/bracket-groups
 
-Requires `x-api-key`. Same response shape as `GET /api/shoots/:shootId/bracket-groups`.
+Requires `x-api-key`. Same group-level response shape as `GET /api/shoots/:shootId/bracket-groups`, with nested assets using the sanitized `/api/v1` asset shape.
 
 ### GET /api/v1/bracket-groups/:groupId
 
-Requires `x-api-key`. Same response shape as `GET /api/bracket-groups/:groupId`.
+Requires `x-api-key`. Same group-level response shape as `GET /api/bracket-groups/:groupId`, with nested assets using the sanitized `/api/v1` asset shape.
 
 ### POST /api/v1/bracket-groups/:groupId/approve
 
-Requires `x-api-key`. Same response shape as `POST /api/bracket-groups/:groupId/approve`.
+Requires `x-api-key`. Same group-level response shape as `POST /api/bracket-groups/:groupId/approve`, with nested assets using the sanitized `/api/v1` asset shape.
 
 ### POST /api/v1/bracket-groups/:groupId/reject
 
-Requires `x-api-key`. Same response shape as `POST /api/bracket-groups/:groupId/reject`.
+Requires `x-api-key`. Same group-level response shape as `POST /api/bracket-groups/:groupId/reject`, with nested assets using the sanitized `/api/v1` asset shape.
 
 ## Error Shape
 

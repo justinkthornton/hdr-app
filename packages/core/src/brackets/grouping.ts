@@ -10,7 +10,38 @@ export type CandidateBracketGroup = {
   assetIds: string[];
 };
 
-const closeCaptureGapMs = 2500;
+const maxGapAfterPreviousExposureMs = 2500;
+
+export function parseExposureDurationMs(value: string | null | undefined): number | null {
+  const normalized = value?.trim().toLowerCase();
+
+  if (!normalized) {
+    return null;
+  }
+
+  const fractionMatch = normalized.match(/^(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/);
+
+  if (fractionMatch) {
+    const numerator = Number(fractionMatch[1] ?? NaN);
+    const denominator = Number(fractionMatch[2] ?? NaN);
+
+    if (Number.isFinite(numerator) && Number.isFinite(denominator) && denominator > 0) {
+      return (numerator / denominator) * 1000;
+    }
+
+    return null;
+  }
+
+  const secondsMatch = normalized.match(/^(\d+(?:\.\d+)?)\s*(?:s|sec|secs|second|seconds)?$/);
+
+  if (!secondsMatch) {
+    return null;
+  }
+
+  const seconds = Number(secondsMatch[1] ?? NaN);
+
+  return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : null;
+}
 
 function partitionKey(asset: Asset): string {
   return [
@@ -81,11 +112,20 @@ function clusterByTime(assets: Asset[]): Asset[][] {
 
   for (const asset of assets) {
     const previous = current[current.length - 1];
+    const previousCapturedAt = previous?.capturedAt;
+    const assetCapturedAt = asset.capturedAt;
+
+    // EXIF capture time is treated as exposure start. Long brackets should split
+    // by the gap after the previous exposure ends, not start-to-start distance.
+    const gapAfterPreviousExposureMs =
+      previousCapturedAt && assetCapturedAt
+        ? assetCapturedAt.getTime() -
+          (previousCapturedAt.getTime() + (parseExposureDurationMs(previous.exposureTime) ?? 0))
+        : null;
 
     if (
-      previous?.capturedAt &&
-      asset.capturedAt &&
-      asset.capturedAt.getTime() - previous.capturedAt.getTime() > closeCaptureGapMs
+      gapAfterPreviousExposureMs !== null &&
+      gapAfterPreviousExposureMs > maxGapAfterPreviousExposureMs
     ) {
       clusters.push(current);
       current = [];
@@ -114,7 +154,7 @@ function consumeCluster(
         nextGroupIndex(),
         7,
         cluster.slice(offset, offset + 7),
-        "Detected clean 7-shot bracket by close EXIF capture times and matching camera/dimensions."
+        "Detected clean 7-shot bracket by close EXIF capture/exposure times and matching camera/dimensions."
       )
     );
     offset += 7;
@@ -126,7 +166,7 @@ function consumeCluster(
         nextGroupIndex(),
         3,
         cluster.slice(offset, offset + 3),
-        "Detected clean 3-shot bracket by close EXIF capture times and matching camera/dimensions."
+        "Detected clean 3-shot bracket by close EXIF capture/exposure times and matching camera/dimensions."
       )
     );
     offset += 3;

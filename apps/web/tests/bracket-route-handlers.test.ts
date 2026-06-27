@@ -27,7 +27,10 @@ const asset: Asset = {
   aperture: "f/8",
   iso: 200,
   exposureBias: null,
-  rawMetadata: {},
+  rawMetadata: {
+    extractionStatus: "extracted",
+    parser: "test-parser"
+  },
   createdAt: new Date("2026-06-27T12:00:00Z")
 };
 
@@ -68,6 +71,22 @@ describe("bracket review route handlers", () => {
     const body = (await response.json()) as { assets: Asset[] };
 
     expect(body.assets).toHaveLength(1);
+  });
+
+  it("sanitizes API-key asset responses", async () => {
+    const response = await handleListAssetsForShoot("shoot-1", deps, {
+      assetMode: "api"
+    });
+    const body = (await response.json()) as { assets: Record<string, unknown>[] };
+
+    expect(body.assets[0]).toMatchObject({
+      originalFilename: "front.jpg",
+      mimeType: "image/jpeg",
+      exposureTime: "1/125",
+      extractionStatus: "extracted"
+    });
+    expect(body.assets[0]).not.toHaveProperty("storageKey");
+    expect(body.assets[0]).not.toHaveProperty("rawMetadata");
   });
 
   it("lists bracket groups", async () => {

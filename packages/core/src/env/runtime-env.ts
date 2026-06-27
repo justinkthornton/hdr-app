@@ -7,6 +7,9 @@ export const runtimeEnvSchema = z.object({
   API_KEY: z.string().min(1),
   STORAGE_DRIVER: z.enum(["local"]).default("local"),
   LOCAL_STORAGE_ROOT: z.string().min(1).default("/data/storage"),
+  MAX_UPLOAD_FILES: z.coerce.number().int().positive().default(9),
+  MAX_UPLOAD_FILE_BYTES: z.coerce.number().int().positive().default(104857600),
+  MAX_UPLOAD_BATCH_BYTES: z.coerce.number().int().positive().default(524288000),
   PHOTOMATIX_LICENSE_KEY: z.string().optional().default("")
 });
 

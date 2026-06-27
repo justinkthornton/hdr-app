@@ -17,11 +17,19 @@ import { jsonResponse } from "./http";
 import {
   serializeAsset,
   serializeBracketGroup,
-  serializeUploadBatch
+  serializeUploadBatch,
+  type AssetSerializationMode
 } from "./phase-2a-serializers";
+
+export type UploadLimits = {
+  maxFiles: number;
+  maxFileBytes: number;
+  maxBatchBytes: number;
+};
 
 export type UploadRouteDeps = {
   storage: StorageAdapter;
+  uploadLimits: UploadLimits;
   getShoot(shootId: string): Promise<Shoot | null>;
   createUploadBatch(input: {
     shootId: string;
@@ -48,6 +56,10 @@ export type UploadRouteDeps = {
   listBracketGroupsForUploadBatch(uploadBatchId: string): Promise<BracketGroup[]>;
 };
 
+export type UploadRouteOptions = {
+  assetMode?: AssetSerializationMode;
+};
+
 function isUploadFile(value: FormDataEntryValue): value is File {
   return value instanceof File;
 }
@@ -67,10 +79,60 @@ function getUploadFiles(formData: FormData): File[] {
   return uniqueFiles;
 }
 
+function validateUploadLimits(files: File[], limits: UploadLimits): Response | null {
+  if (files.length > limits.maxFiles) {
+    return jsonResponse(
+      {
+        error: "too_many_files",
+        maxFiles: limits.maxFiles
+      },
+      {
+        status: 400
+      }
+    );
+  }
+
+  const oversizedFile = files.find((file) => file.size > limits.maxFileBytes);
+
+  if (oversizedFile) {
+    return jsonResponse(
+      {
+        error: "file_too_large",
+        filename: oversizedFile.name,
+        maxBytes: limits.maxFileBytes
+      },
+      {
+        status: 400
+      }
+    );
+  }
+
+  const batchSizeBytes = files.reduce((total, file) => total + file.size, 0);
+
+  if (batchSizeBytes > limits.maxBatchBytes) {
+    return jsonResponse(
+      {
+        error: "batch_too_large",
+        maxBytes: limits.maxBatchBytes
+      },
+      {
+        status: 400
+      }
+    );
+  }
+
+  return null;
+}
+
+async function cleanupStoredObjects(storage: StorageAdapter, storageKeys: string[]): Promise<void> {
+  await Promise.allSettled(storageKeys.map((storageKey) => storage.deleteObject(storageKey)));
+}
+
 export async function handleUploadFiles(
   request: Request,
   shootId: string,
-  deps: UploadRouteDeps
+  deps: UploadRouteDeps,
+  options: UploadRouteOptions = {}
 ): Promise<Response> {
   const shoot = await deps.getShoot(shootId);
 
@@ -111,6 +173,12 @@ export async function handleUploadFiles(
     );
   }
 
+  const limitError = validateUploadLimits(files, deps.uploadLimits);
+
+  if (limitError) {
+    return limitError;
+  }
+
   const unsupported = files.filter((file) => !isAcceptedUploadExtension(file.name));
 
   if (unsupported.length > 0) {
@@ -125,39 +193,42 @@ export async function handleUploadFiles(
     );
   }
 
-  const uploadBatch = await deps.createUploadBatch({
-    shootId,
-    originalFileCount: files.length
-  });
   const createdAssets: Asset[] = [];
+  const writtenStorageKeys: string[] = [];
 
-  for (const file of files) {
-    const assetId = randomUUID();
-    const body = Buffer.from(await file.arrayBuffer());
-    const mimeType = inferMimeType(file.name, file.type);
-    const fileExt = getFileExtension(file.name);
-    const storageKey = buildOriginalStorageKey({
+  try {
+    const uploadBatch = await deps.createUploadBatch({
       shootId,
-      uploadBatchId: uploadBatch.id,
-      assetId,
-      filename: file.name
-    });
-    const metadata = extractAssetMetadata({
-      filename: file.name,
-      mimeType,
-      body
+      originalFileCount: files.length
     });
 
-    await deps.storage.putObject({
-      key: storageKey,
-      body,
-      metadata: {
-        contentType: mimeType,
-        sizeBytes: body.byteLength
-      }
-    });
+    for (const file of files) {
+      const assetId = randomUUID();
+      const body = Buffer.from(await file.arrayBuffer());
+      const mimeType = inferMimeType(file.name, file.type);
+      const fileExt = getFileExtension(file.name);
+      const storageKey = buildOriginalStorageKey({
+        shootId,
+        uploadBatchId: uploadBatch.id,
+        assetId,
+        filename: file.name
+      });
+      const metadata = extractAssetMetadata({
+        filename: file.name,
+        mimeType,
+        body
+      });
 
-    try {
+      await deps.storage.putObject({
+        key: storageKey,
+        body,
+        metadata: {
+          contentType: mimeType,
+          sizeBytes: body.byteLength
+        }
+      });
+      writtenStorageKeys.push(storageKey);
+
       createdAssets.push(
         await deps.createAsset({
           id: assetId,
@@ -171,27 +242,37 @@ export async function handleUploadFiles(
           metadata
         })
       );
-    } catch (error) {
-      await deps.storage.deleteObject(storageKey);
-      throw error;
     }
+
+    const candidateGroups = groupAssetsForUploadBatch(createdAssets);
+    const bracketGroups = await deps.createBracketGroups({
+      shootId,
+      uploadBatchId: uploadBatch.id,
+      groups: candidateGroups
+    });
+
+    return jsonResponse(
+      {
+        uploadBatch: serializeUploadBatch(uploadBatch),
+        assets: createdAssets.map((asset) => serializeAsset(asset, { mode: options.assetMode })),
+        bracketGroups: bracketGroups.map((group) =>
+          serializeBracketGroup(group, { mode: options.assetMode })
+        )
+      },
+      {
+        status: 201
+      }
+    );
+  } catch {
+    await cleanupStoredObjects(deps.storage, writtenStorageKeys);
+
+    return jsonResponse(
+      {
+        error: "upload_failed"
+      },
+      {
+        status: 500
+      }
+    );
   }
-
-  const candidateGroups = groupAssetsForUploadBatch(createdAssets);
-  const bracketGroups = await deps.createBracketGroups({
-    shootId,
-    uploadBatchId: uploadBatch.id,
-    groups: candidateGroups
-  });
-
-  return jsonResponse(
-    {
-      uploadBatch: serializeUploadBatch(uploadBatch),
-      assets: createdAssets.map(serializeAsset),
-      bracketGroups: bracketGroups.map(serializeBracketGroup)
-    },
-    {
-      status: 201
-    }
-  );
 }

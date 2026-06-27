@@ -1,6 +1,14 @@
 import type { Asset, BracketGroup, BracketGroupStatus } from "@structure-locked-hdr/core";
 import { jsonResponse } from "./http";
-import { serializeAsset, serializeBracketGroup } from "./phase-2a-serializers";
+import {
+  serializeAsset,
+  serializeBracketGroup,
+  type AssetSerializationMode
+} from "./phase-2a-serializers";
+
+export type BracketGroupRouteOptions = {
+  assetMode?: AssetSerializationMode;
+};
 
 export type BracketGroupRouteDeps = {
   listAssetsForShoot(shootId: string): Promise<Asset[]>;
@@ -14,29 +22,34 @@ export type BracketGroupRouteDeps = {
 
 export async function handleListAssetsForShoot(
   shootId: string,
-  deps: BracketGroupRouteDeps
+  deps: BracketGroupRouteDeps,
+  options: BracketGroupRouteOptions = {}
 ): Promise<Response> {
   const assets = await deps.listAssetsForShoot(shootId);
 
   return jsonResponse({
-    assets: assets.map(serializeAsset)
+    assets: assets.map((asset) => serializeAsset(asset, { mode: options.assetMode }))
   });
 }
 
 export async function handleListBracketGroupsForShoot(
   shootId: string,
-  deps: BracketGroupRouteDeps
+  deps: BracketGroupRouteDeps,
+  options: BracketGroupRouteOptions = {}
 ): Promise<Response> {
   const bracketGroups = await deps.listBracketGroupsForShoot(shootId);
 
   return jsonResponse({
-    bracketGroups: bracketGroups.map(serializeBracketGroup)
+    bracketGroups: bracketGroups.map((group) =>
+      serializeBracketGroup(group, { mode: options.assetMode })
+    )
   });
 }
 
 export async function handleGetBracketGroup(
   groupId: string,
-  deps: BracketGroupRouteDeps
+  deps: BracketGroupRouteDeps,
+  options: BracketGroupRouteOptions = {}
 ): Promise<Response> {
   const bracketGroup = await deps.getBracketGroupWithAssets(groupId);
 
@@ -52,14 +65,15 @@ export async function handleGetBracketGroup(
   }
 
   return jsonResponse({
-    bracketGroup: serializeBracketGroup(bracketGroup)
+    bracketGroup: serializeBracketGroup(bracketGroup, { mode: options.assetMode })
   });
 }
 
 export async function handleUpdateBracketGroupStatus(
   groupId: string,
   status: BracketGroupStatus,
-  deps: BracketGroupRouteDeps
+  deps: BracketGroupRouteDeps,
+  options: BracketGroupRouteOptions = {}
 ): Promise<Response> {
   const bracketGroup = await deps.updateBracketGroupStatus(groupId, status);
 
@@ -75,6 +89,6 @@ export async function handleUpdateBracketGroupStatus(
   }
 
   return jsonResponse({
-    bracketGroup: serializeBracketGroup(bracketGroup)
+    bracketGroup: serializeBracketGroup(bracketGroup, { mode: options.assetMode })
   });
 }

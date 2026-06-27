@@ -1,5 +1,11 @@
 import type { Asset, BracketGroup, UploadBatch } from "@structure-locked-hdr/core";
 
+export type AssetSerializationMode = "admin" | "api";
+
+export type AssetSerializationOptions = {
+  mode?: AssetSerializationMode | undefined;
+};
+
 export function serializeUploadBatch(uploadBatch: UploadBatch): Record<string, unknown> {
   return {
     id: uploadBatch.id,
@@ -10,13 +16,20 @@ export function serializeUploadBatch(uploadBatch: UploadBatch): Record<string, u
   };
 }
 
-export function serializeAsset(asset: Asset): Record<string, unknown> {
-  return {
+function getExtractionStatus(asset: Asset): string | null {
+  const status = asset.rawMetadata.extractionStatus;
+  return typeof status === "string" ? status : null;
+}
+
+export function serializeAsset(
+  asset: Asset,
+  options: AssetSerializationOptions = {}
+): Record<string, unknown> {
+  const serialized = {
     id: asset.id,
     shootId: asset.shootId,
     uploadBatchId: asset.uploadBatchId,
     originalFilename: asset.originalFilename,
-    storageKey: asset.storageKey,
     mimeType: asset.mimeType,
     fileExt: asset.fileExt,
     fileSizeBytes: asset.fileSizeBytes,
@@ -29,12 +42,25 @@ export function serializeAsset(asset: Asset): Record<string, unknown> {
     aperture: asset.aperture,
     iso: asset.iso,
     exposureBias: asset.exposureBias,
-    rawMetadata: asset.rawMetadata,
+    extractionStatus: getExtractionStatus(asset),
     createdAt: asset.createdAt.toISOString()
+  };
+
+  if (options.mode === "api") {
+    return serialized;
+  }
+
+  return {
+    ...serialized,
+    storageKey: asset.storageKey,
+    rawMetadata: asset.rawMetadata
   };
 }
 
-export function serializeBracketGroup(group: BracketGroup): Record<string, unknown> {
+export function serializeBracketGroup(
+  group: BracketGroup,
+  options: AssetSerializationOptions = {}
+): Record<string, unknown> {
   return {
     id: group.id,
     shootId: group.shootId,
@@ -49,7 +75,7 @@ export function serializeBracketGroup(group: BracketGroup): Record<string, unkno
     approvedAt: group.approvedAt?.toISOString() ?? null,
     createdAt: group.createdAt.toISOString(),
     assets: group.assets.map((asset) => ({
-      ...serializeAsset(asset),
+      ...serializeAsset(asset, options),
       sortOrder: asset.sortOrder
     }))
   };

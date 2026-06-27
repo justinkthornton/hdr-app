@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupAssetsForUploadBatch, type Asset } from "../src/index";
+import { groupAssetsForUploadBatch, parseExposureDurationMs, type Asset } from "../src/index";
 
 function asset(
   index: number,
@@ -32,6 +32,24 @@ function asset(
 }
 
 describe("bracket grouping", () => {
+  it("parses supported exposure duration strings", () => {
+    expect(parseExposureDurationMs("30")).toBe(30000);
+    expect(parseExposureDurationMs("30s")).toBe(30000);
+    expect(parseExposureDurationMs("30 sec")).toBe(30000);
+    expect(parseExposureDurationMs("30 seconds")).toBe(30000);
+    expect(parseExposureDurationMs("1/2")).toBe(500);
+    expect(parseExposureDurationMs("1/125")).toBe(8);
+    expect(parseExposureDurationMs("0.5")).toBe(500);
+    expect(parseExposureDurationMs("0.5s")).toBe(500);
+  });
+
+  it("rejects unsupported exposure duration strings", () => {
+    expect(parseExposureDurationMs(null)).toBeNull();
+    expect(parseExposureDurationMs("")).toBeNull();
+    expect(parseExposureDurationMs("auto")).toBeNull();
+    expect(parseExposureDurationMs("1/0")).toBeNull();
+  });
+
   it("detects one clean 7-shot group", () => {
     const groups = groupAssetsForUploadBatch(Array.from({ length: 7 }, (_, index) => asset(index)));
 
@@ -52,6 +70,105 @@ describe("bracket grouping", () => {
       detectedCount: 3
     });
     expect(groups[0]?.confidence).toBeGreaterThanOrEqual(0.8);
+  });
+
+  it("keeps a long-exposure 3-shot bracket grouped by post-exposure gap", () => {
+    const groups = groupAssetsForUploadBatch([
+      asset(1, {
+        capturedAt: new Date("2026-06-27T12:00:00Z"),
+        exposureTime: "30"
+      }),
+      asset(2, {
+        capturedAt: new Date("2026-06-27T12:00:31Z"),
+        exposureTime: "15"
+      }),
+      asset(3, {
+        capturedAt: new Date("2026-06-27T12:00:47Z"),
+        exposureTime: "8"
+      })
+    ]);
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0]).toMatchObject({
+      expectedCount: 3,
+      detectedCount: 3
+    });
+  });
+
+  it("keeps a long-exposure 7-shot bracket grouped by post-exposure gap", () => {
+    const groups = groupAssetsForUploadBatch([
+      asset(1, {
+        capturedAt: new Date("2026-06-27T12:00:00Z"),
+        exposureTime: "30 seconds"
+      }),
+      asset(2, {
+        capturedAt: new Date("2026-06-27T12:00:31Z"),
+        exposureTime: "15"
+      }),
+      asset(3, {
+        capturedAt: new Date("2026-06-27T12:00:47Z"),
+        exposureTime: "8"
+      }),
+      asset(4, {
+        capturedAt: new Date("2026-06-27T12:00:56Z"),
+        exposureTime: "4"
+      }),
+      asset(5, {
+        capturedAt: new Date("2026-06-27T12:01:01Z"),
+        exposureTime: "2"
+      }),
+      asset(6, {
+        capturedAt: new Date("2026-06-27T12:01:04Z"),
+        exposureTime: "1"
+      }),
+      asset(7, {
+        capturedAt: new Date("2026-06-27T12:01:06Z"),
+        exposureTime: "0.5s"
+      })
+    ]);
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0]).toMatchObject({
+      expectedCount: 7,
+      detectedCount: 7
+    });
+  });
+
+  it("splits a large real gap after the previous exposure ends", () => {
+    const groups = groupAssetsForUploadBatch([
+      asset(1, {
+        capturedAt: new Date("2026-06-27T12:00:00Z"),
+        exposureTime: "30"
+      }),
+      asset(2, {
+        capturedAt: new Date("2026-06-27T12:00:45Z"),
+        exposureTime: "15"
+      })
+    ]);
+
+    expect(groups).toHaveLength(2);
+    expect(groups.some((group) => group.detectedCount === 2)).toBe(false);
+    expect(groups.every((group) => group.confidence < 0.8)).toBe(true);
+  });
+
+  it("falls back to raw capture-time gaps when exposure time is missing", () => {
+    const groups = groupAssetsForUploadBatch([
+      asset(1, {
+        capturedAt: new Date("2026-06-27T12:00:00Z"),
+        exposureTime: null
+      }),
+      asset(2, {
+        capturedAt: new Date("2026-06-27T12:00:31Z"),
+        exposureTime: null
+      }),
+      asset(3, {
+        capturedAt: new Date("2026-06-27T12:00:47Z"),
+        exposureTime: null
+      })
+    ]);
+
+    expect(groups).toHaveLength(3);
+    expect(groups.some((group) => group.detectedCount === 3)).toBe(false);
   });
 
   it("detects mixed 7-shot and 3-shot groups in one upload batch", () => {

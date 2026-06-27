@@ -13,14 +13,19 @@ fixtures/phase-2a/local/
 
 Keep actual image files ignored or outside the repo. Automated tests use tiny synthetic JPEG buffers in code rather than committed client files.
 
-Manual validation target:
+Manual validation targets:
 
-- create a shoot
-- upload a small JPEG bracket set
-- confirm assets appear
-- confirm bracket groups appear
-- approve one group
-- reject one group
-- confirm the API-key list groups endpoint works
+- Use one local non-client 7-shot JPEG bracket set.
+- Use one local non-client 3-shot JPEG bracket set.
+- Create a shoot for each set or use clearly named test shoots.
+- Upload the full set through the admin UI or upload endpoint.
+- Confirm every original appears as an asset.
+- Confirm metadata appears where the source JPEG contains it.
+- Confirm the 7-shot set creates one pending-review 7-shot bracket group.
+- Confirm the 3-shot set creates one pending-review 3-shot bracket group.
+- Approve and reject groups and confirm the status persists after refresh/readback.
+- Confirm the API-key list assets and list groups endpoints work without exposing internal storage keys or broad raw metadata.
+
+Do not claim real-photo validation has passed until both local fixture sets have been tested on the running app.
 
 RAW fixture validation remains pending.

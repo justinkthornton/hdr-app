@@ -7,5 +7,7 @@ type RouteContext = {
 
 export async function GET(_request: Request, context: RouteContext): Promise<Response> {
   const params = await context.params;
-  return handleGetBracketGroup(params.groupId, makePhase2ADeps());
+  return handleGetBracketGroup(params.groupId, makePhase2ADeps(), {
+    assetMode: "api"
+  });
 }

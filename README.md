@@ -37,10 +37,13 @@ ADMIN_SESSION_SECRET=replace-with-a-random-session-secret-32-chars-min
 API_KEY=replace-with-api-key
 STORAGE_DRIVER=local
 LOCAL_STORAGE_ROOT=/data/storage
+MAX_UPLOAD_FILES=9
+MAX_UPLOAD_FILE_BYTES=104857600
+MAX_UPLOAD_BATCH_BYTES=524288000
 PHOTOMATIX_LICENSE_KEY=
 ```
 
-`ADMIN_PASSWORD` is only for login validation. `ADMIN_SESSION_SECRET` signs the admin session cookie and must be a separate secret. `PHOTOMATIX_LICENSE_KEY` is reserved for later PhotomatixCL work and is not used by Phase 2A code.
+`ADMIN_PASSWORD` is only for login validation. `ADMIN_SESSION_SECRET` signs the admin session cookie and must be a separate secret. `MAX_UPLOAD_FILES` defaults to 9, `MAX_UPLOAD_FILE_BYTES` defaults to 100 MiB, and `MAX_UPLOAD_BATCH_BYTES` defaults to 500 MiB for local-use upload safety. `PHOTOMATIX_LICENSE_KEY` is reserved for later PhotomatixCL work and is not used by Phase 2A code.
 
 ## Docker Compose
 
@@ -129,8 +132,9 @@ Included:
 - Batch upload UI on shoot detail pages.
 - LocalVolumeStorage-backed original file storage.
 - Admin and API-key upload endpoints.
+- Env-backed upload limits with pre-write 400 errors for too many files, oversized files, and oversized batches.
 - JPEG metadata extraction with RAW/TIFF partial-storage support.
-- Deterministic 7-shot, 3-shot, and ambiguous bracket grouping.
+- Exposure-aware deterministic 7-shot, 3-shot, and ambiguous bracket grouping.
 - Asset and bracket group review UI.
 - Admin and API-key endpoints for listing assets/groups and approving/rejecting groups.
 - Adapter seams for future auth, storage, HDR engine, and worker work.

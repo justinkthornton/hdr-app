@@ -7,5 +7,7 @@ type RouteContext = {
 
 export async function POST(request: Request, context: RouteContext): Promise<Response> {
   const params = await context.params;
-  return handleUploadFiles(request, params.shootId, makePhase2ADeps());
+  return handleUploadFiles(request, params.shootId, makePhase2ADeps(), {
+    assetMode: "api"
+  });
 }

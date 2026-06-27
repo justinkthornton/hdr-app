@@ -7,5 +7,7 @@ type RouteContext = {
 
 export async function POST(_request: Request, context: RouteContext): Promise<Response> {
   const params = await context.params;
-  return handleUpdateBracketGroupStatus(params.groupId, "rejected", makePhase2ADeps());
+  return handleUpdateBracketGroupStatus(params.groupId, "rejected", makePhase2ADeps(), {
+    assetMode: "api"
+  });
 }

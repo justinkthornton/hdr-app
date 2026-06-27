@@ -78,13 +78,19 @@ Output:
 
 REST backing: `GET /api/v1/shoots/:shootId/assets`
 
+Output uses the sanitized `/api/v1` asset shape. It includes useful review fields such as filename, MIME type, file size, dimensions, camera/lens model, capture time, exposure metadata, and `extractionStatus`. It does not expose internal `storageKey` or broad `rawMetadata` fields by default.
+
 ### list_bracket_groups
 
 REST backing: `GET /api/v1/shoots/:shootId/bracket-groups`
 
+Nested assets use the same sanitized `/api/v1` asset shape.
+
 ### get_bracket_group
 
 REST backing: `GET /api/v1/bracket-groups/:bracketGroupId`
+
+Nested assets use the same sanitized `/api/v1` asset shape.
 
 ### approve_bracket_group
 
@@ -98,7 +104,7 @@ REST backing: `POST /api/v1/bracket-groups/:bracketGroupId/reject`
 
 REST backing: `POST /api/v1/shoots/:shootId/uploads`
 
-This endpoint is implemented as a multipart REST upload. A future Hermes tool wrapper can call it when file transfer semantics are settled.
+This endpoint is implemented as a multipart REST upload. It enforces the same local upload limits as the admin endpoint and returns `too_many_files`, `file_too_large`, or `batch_too_large` for limit failures. A future Hermes tool wrapper can call it when file transfer semantics are settled.
 
 ## Still Planned
 
