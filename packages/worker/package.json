@@ -1,0 +1,14 @@
+{
+  "name": "@structure-locked-hdr/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint .",
+    "test": "vitest run packages/worker"
+  },
+  "dependencies": {
+    "@structure-locked-hdr/core": "workspace:*"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "structure-locked-hdr-service",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Phase 1 foundation for an internal structure-locked HDR processing service.",
+  "packageManager": "pnpm@11.7.0",
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter @structure-locked-hdr/web dev",
+    "build": "pnpm -r build",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "format": "prettier --check .",
+    "format:write": "prettier --write .",
+    "db:migrate": "pnpm --filter @structure-locked-hdr/core db:migrate",
+    "db:reset": "pnpm --filter @structure-locked-hdr/core db:reset"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@next/eslint-plugin-next": "^16.2.9",
+    "@types/node": "^26.0.1",
+    "eslint": "^10.6.0",
+    "prettier": "^3.9.0",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.62.0",
+    "vitest": "^4.1.9"
+  }
+}

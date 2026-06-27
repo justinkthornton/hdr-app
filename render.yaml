@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: structure-locked-hdr-web
+    runtime: docker
+    dockerfilePath: ./docker/web.Dockerfile
+    plan: starter
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: API_KEY
+        sync: false
+      - key: STORAGE_DRIVER
+        value: local
+      - key: LOCAL_STORAGE_ROOT
+        value: /data/storage
+      - key: PHOTOMATIX_LICENSE_KEY
+        sync: false
+
+databases:
+  - name: structure-locked-hdr-postgres
+    plan: starter
