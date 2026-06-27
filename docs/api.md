@@ -98,6 +98,14 @@ Admin session required.
 
 Admin session required. Accepts any subset of `name`, `clientName`, `propertyAddress`, `notes`, and `tags`.
 
+Example:
+
+```json
+{
+  "notes": "Updated by Phase 1 smoke test"
+}
+```
+
 ### GET /api/v1/shoots
 
 Requires `x-api-key`. Same response shape as `GET /api/shoots`.

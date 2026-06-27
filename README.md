@@ -83,6 +83,26 @@ pnpm dev
 
 Open `http://localhost:3000`, sign in with `ADMIN_PASSWORD`, and create/list shoots from the dashboard.
 
+## Phase 1 Smoke Test
+
+After the app and Postgres are running and migrations have completed, validate the Phase 1 runtime surface:
+
+```bash
+API_KEY=replace-with-a-local-api-key \
+ADMIN_PASSWORD=replace-with-a-local-admin-password \
+pnpm smoke:phase1
+```
+
+Set `BASE_URL` if the app is not running at `http://localhost:3000`.
+
+The smoke test checks:
+
+- `/api/v1/health` accepts a valid API key and rejects a missing key.
+- Admin login sets an HTTP-only session cookie.
+- Admin session reads back as authenticated.
+- API-key shoot create/list/get works.
+- Admin shoot update works.
+
 ## Checks
 
 ```bash
@@ -90,6 +110,7 @@ pnpm test
 pnpm lint
 pnpm build
 pnpm format
+pnpm smoke:phase1
 ```
 
 ## Phase 1 Scope
