@@ -11,3 +11,4 @@ Dockerfile.local
 /data/
 /storage/
 fixtures/phase-2a/local/
+local-fixtures/

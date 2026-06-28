@@ -21,6 +21,10 @@ function getExtractionStatus(asset: Asset): string | null {
   return typeof status === "string" ? status : null;
 }
 
+function getThumbnailUrl(asset: Asset): string | null {
+  return asset.thumbnailStorageKey ? `/api/assets/${asset.id}/thumbnail` : null;
+}
+
 export function serializeAsset(
   asset: Asset,
   options: AssetSerializationOptions = {}
@@ -52,6 +56,7 @@ export function serializeAsset(
 
   return {
     ...serialized,
+    thumbnailUrl: getThumbnailUrl(asset),
     storageKey: asset.storageKey,
     rawMetadata: asset.rawMetadata
   };

@@ -41,7 +41,16 @@ type MemoryStorage = StorageAdapter & {
 };
 
 function makeStorage(): MemoryStorage {
-  const objects = new Map<string, Buffer>();
+  const objects = new Map<
+    string,
+    {
+      body: Buffer;
+      metadata: {
+        contentType: string;
+        sizeBytes: number;
+      };
+    }
+  >();
   let putCount = 0;
   let deleteCount = 0;
 
@@ -50,7 +59,10 @@ function makeStorage(): MemoryStorage {
       const body = Buffer.isBuffer(input.body)
         ? input.body
         : Buffer.from(await new Response(input.body).arrayBuffer());
-      objects.set(input.key, body);
+      objects.set(input.key, {
+        body,
+        metadata: input.metadata
+      });
       putCount += 1;
       return {
         key: input.key,
@@ -58,16 +70,13 @@ function makeStorage(): MemoryStorage {
       };
     },
     async getObject(key) {
-      const body = objects.get(key);
+      const object = objects.get(key);
 
-      return body
+      return object
         ? {
             key,
-            body,
-            metadata: {
-              contentType: "application/octet-stream",
-              sizeBytes: body.byteLength
-            }
+            body: object.body,
+            metadata: object.metadata
           }
         : null;
     },
@@ -119,6 +128,7 @@ function makeDeps(
           uploadBatchId: input.uploadBatchId,
           originalFilename: input.originalFilename,
           storageKey: input.storageKey,
+          thumbnailStorageKey: input.thumbnailStorageKey ?? null,
           mimeType: input.mimeType,
           fileExt: input.fileExt,
           fileSizeBytes: input.fileSizeBytes,
@@ -184,9 +194,22 @@ describe("upload route handler", () => {
       shoot.id,
       makeDeps()
     );
-    const body = (await response.json()) as { assets: Asset[]; bracketGroups: BracketGroup[] };
+    const body = (await response.json()) as {
+      groupSummary: {
+        uploadedPhotoCount: number;
+        detectedGroupCount: number;
+        ambiguousPhotoCount: number;
+      };
+      assets: Asset[];
+      bracketGroups: BracketGroup[];
+    };
 
     expect(response.status).toBe(201);
+    expect(body.groupSummary).toMatchObject({
+      uploadedPhotoCount: 1,
+      detectedGroupCount: 1,
+      ambiguousPhotoCount: 1
+    });
     expect(body.assets).toHaveLength(1);
     expect(body.assets[0]?.originalFilename).toBe("front.jpg");
     expect(body.bracketGroups).toHaveLength(1);

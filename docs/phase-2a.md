@@ -8,9 +8,10 @@ Phase 2A adds local upload, metadata extraction, bracket grouping, and review. I
 - Admin and API-key upload endpoints accept multipart file batches.
 - Upload safety limits are env-backed: `MAX_UPLOAD_FILES` defaults to 9, `MAX_UPLOAD_FILE_BYTES` defaults to 100 MiB, and `MAX_UPLOAD_BATCH_BYTES` defaults to 500 MiB.
 - JPEG metadata extraction reads capture time, camera model, lens model, dimensions, exposure time, aperture, ISO, exposure bias, and raw parser notes when present.
+- JPEG thumbnails are generated during upload and stored locally under `LOCAL_STORAGE_ROOT`.
 - RAW/TIFF extensions are accepted and stored with partial metadata notes.
 - Exposure-aware deterministic bracket grouping creates pending-review 7-shot, 3-shot, and ambiguous groups.
-- Shoot detail UI shows upload controls, uploaded assets, metadata, detected groups, and approve/reject actions.
+- Shoot detail UI shows workflow steps, upload controls, upload result summaries, uploaded assets, thumbnails/placeholders, diagnostics, detected groups, and approve/reject actions.
 - Admin and `/api/v1` endpoints expose assets, groups, get group, approve, and reject.
 
 ## Upload Flow
@@ -21,9 +22,13 @@ Phase 2A adds local upload, metadata extraction, bracket grouping, and review. I
 4. The server rejects unsafe requests before writing storage or database rows when the batch has too many files, an oversized file, an oversized total batch, an unsupported extension, or no file entries.
 5. The server creates an `upload_batches` row.
 6. Each file is stored through `LocalVolumeStorage`.
-7. Each file becomes an `assets` row with metadata fields.
-8. Assets from the upload batch are grouped into candidate bracket groups.
-9. Groups remain `pending_review` until an admin or API-key caller approves or rejects them.
+7. JPEG files get a resized local thumbnail when the JPEG is readable.
+8. Each file becomes an `assets` row with metadata fields and an optional thumbnail storage key.
+9. Assets from the upload batch are grouped into candidate bracket groups.
+10. The UI reports how many photos uploaded, how many groups were detected, whether a 3-shot or 7-shot group was found, and whether any photos need review.
+11. Groups remain `pending_review` until an admin or API-key caller approves or rejects them.
+
+The user does not manually sort brackets in Phase 2A. The app automatically groups 3-shot and 7-shot brackets, and the user reviews the detected groups.
 
 Limit failures return clear 400 errors:
 
@@ -41,7 +46,13 @@ Originals use stable keys:
 shoots/{shootId}/uploads/{uploadBatchId}/originals/{assetId}-{safeFilename}
 ```
 
-Filenames are sanitized and storage keys reject path traversal. Originals are written under `LOCAL_STORAGE_ROOT`, which is mounted as `/data/storage` in Docker Compose.
+JPEG thumbnails use stable keys:
+
+```text
+shoots/{shootId}/uploads/{uploadBatchId}/thumbnails/{assetId}.jpg
+```
+
+Filenames and storage path segments are sanitized and storage keys reject path traversal. Originals and thumbnails are written under `LOCAL_STORAGE_ROOT`, which is mounted as `/data/storage` in Docker Compose.
 
 ## Accepted File Types
 
@@ -58,7 +69,7 @@ Filenames are sanitized and storage keys reject path traversal. Originals are wr
 
 ## Metadata Extraction
 
-JPEG metadata is parsed locally without modifying originals. RAW/TIFF files are stored now, but parser support is partial until representative fixtures are available.
+JPEG metadata is parsed locally without modifying originals. JPEG thumbnails are generated from the uploaded JPEG bytes and stored separately. RAW/TIFF files are stored now, but parser support and RAW/TIFF thumbnailing are partial until representative fixtures are available.
 
 RAW targets for later fixture work:
 
@@ -79,7 +90,7 @@ RAW targets for later fixture work:
 
 ## Review Workflow
 
-The UI shows each group with status, confidence, detected/expected count, reason, filename order, and exposure metadata. Approve and reject persist to `bracket_groups.reviewed_at`; approved groups also set `approved_at`.
+The UI guides the user through upload, detected-group review, approval, and the deferred HDR processing step. It shows each group with a large 7-shot, 3-shot, or ambiguous heading; status badge; confidence; plain-language grouping reason; thumbnail strip in capture order; detected/expected file count; and approve/reject buttons. Asset diagnostics show capture time, exposure time, camera model, dimensions, and extraction status.
 
 Approval does not start PhotomatixCL, HDR jobs, exports, reruns, or worker processing.
 
@@ -93,8 +104,7 @@ Approval does not start PhotomatixCL, HDR jobs, exports, reruns, or worker proce
 - No Better Auth or OAuth.
 - No true MCP server.
 - No runtime AI.
-- No RAW thumbnailing.
-- JPEG thumbnails are not generated in Phase 2A; the UI shows filenames and metadata.
+- No RAW/TIFF thumbnailing; RAW/TIFF files use file-type placeholders in the review UI.
 - Manual validation with real JPEG bracket fixtures is pending until local non-client fixtures are supplied.
 - Upload cleanup is best-effort for local storage objects and is not yet a full database transaction.
 

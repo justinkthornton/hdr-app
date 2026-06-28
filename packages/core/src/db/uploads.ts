@@ -24,6 +24,7 @@ type AssetRow = {
   upload_batch_id: string | null;
   original_filename: string;
   storage_key: string;
+  thumbnail_storage_key: string | null;
   mime_type: string;
   file_ext: string;
   file_size_bytes: string | number;
@@ -74,6 +75,7 @@ const assetFields = `
   upload_batch_id,
   original_filename,
   storage_key,
+  thumbnail_storage_key,
   mime_type,
   file_ext,
   file_size_bytes,
@@ -130,6 +132,7 @@ export function mapAssetRow(row: AssetRow): Asset {
     uploadBatchId: row.upload_batch_id,
     originalFilename: row.original_filename,
     storageKey: row.storage_key,
+    thumbnailStorageKey: row.thumbnail_storage_key,
     mimeType: row.mime_type,
     fileExt: row.file_ext,
     fileSizeBytes:
@@ -244,6 +247,7 @@ export async function createAsset(
     uploadBatchId: string;
     originalFilename: string;
     storageKey: string;
+    thumbnailStorageKey?: string | null;
     mimeType: string;
     fileExt: string;
     fileSizeBytes: number;
@@ -257,6 +261,7 @@ export async function createAsset(
       upload_batch_id,
       original_filename,
       storage_key,
+      thumbnail_storage_key,
       mime_type,
       file_ext,
       file_size_bytes,
@@ -272,7 +277,7 @@ export async function createAsset(
       raw_metadata
     ) values (
       $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-      $11, $12, $13, $14, $15, $16, $17, $18
+      $11, $12, $13, $14, $15, $16, $17, $18, $19
     )
     returning ${assetFields}`,
     [
@@ -281,6 +286,7 @@ export async function createAsset(
       input.uploadBatchId,
       input.originalFilename,
       input.storageKey,
+      input.thumbnailStorageKey ?? null,
       input.mimeType,
       input.fileExt,
       input.fileSizeBytes,
@@ -331,6 +337,18 @@ export async function listAssetsForUploadBatch(
   );
 
   return result.rows.map(mapAssetRow);
+}
+
+export async function getAsset(db: Queryable, assetId: string): Promise<Asset | null> {
+  const result = await db.query<AssetRow>(
+    `select ${assetFields}
+    from assets
+    where id = $1`,
+    [assetId]
+  );
+
+  const row = result.rows[0];
+  return row ? mapAssetRow(row) : null;
 }
 
 export async function createBracketGroups(

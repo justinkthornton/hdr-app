@@ -1,12 +1,12 @@
 # Structure-Locked HDR Service
 
-Internal real estate HDR processing service foundation. Phase 2A adds local batch upload, JPEG metadata extraction, EXIF-time bracket grouping, and review/approval UI. PhotomatixCL processing, worker execution, reruns, and exports are still intentionally deferred.
+Internal real estate HDR processing service foundation. Phase 2A adds local batch upload, JPEG metadata extraction, JPEG thumbnails, EXIF/exposure-aware bracket grouping, and review/approval UI. PhotomatixCL processing, worker execution, reruns, and exports are still intentionally deferred.
 
 ## Stack
 
 - pnpm workspace for a small TypeScript monorepo.
 - Next.js, React, and TypeScript in `apps/web`.
-- Shared contracts, validation, auth helpers, database helpers, local storage, metadata extraction, bracket grouping, and future adapter seams in `packages/core`.
+- Shared contracts, validation, auth helpers, database helpers, local storage, metadata extraction, JPEG thumbnail generation, bracket grouping, and future adapter seams in `packages/core`.
 - Placeholder worker package in `packages/worker`.
 - Postgres via `pg`.
 - SQL migration files in `db/migrations`.
@@ -134,8 +134,9 @@ Included:
 - Admin and API-key upload endpoints.
 - Env-backed upload limits with pre-write 400 errors for too many files, oversized files, and oversized batches.
 - JPEG metadata extraction with RAW/TIFF partial-storage support.
+- Local JPEG thumbnail generation and admin-protected thumbnail previews.
 - Exposure-aware deterministic 7-shot, 3-shot, and ambiguous bracket grouping.
-- Asset and bracket group review UI.
+- Asset and bracket group review UI with explicit workflow steps, upload summaries, visual previews, diagnostics, and approve/reject actions.
 - Admin and API-key endpoints for listing assets/groups and approving/rejecting groups.
 - Adapter seams for future auth, storage, HDR engine, and worker work.
 - Documentation for API, auth, security, Phase 2A, Render shape, MCP-style REST contract, and Phase 2 preview.
@@ -146,6 +147,7 @@ Not included:
 - Export generation.
 - HDR job creation.
 - Reruns.
+- Manual drag-and-drop sorting.
 - Better Auth, OAuth, true MCP server, or runtime AI calls.
 
 ## Phase 2 Preview

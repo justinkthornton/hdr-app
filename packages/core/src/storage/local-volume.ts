@@ -4,6 +4,20 @@ import type { StorageAdapter, StorageObjectMetadata, StoredObject } from "./adap
 
 const fallbackFilename = "upload";
 
+function assertSafeStorageSegment(value: string, label: string): string {
+  if (
+    value.length === 0 ||
+    value === "." ||
+    value === ".." ||
+    value.includes("/") ||
+    value.includes("\\")
+  ) {
+    throw new Error(`${label} must be a single safe storage path segment.`);
+  }
+
+  return value;
+}
+
 export function sanitizeFilename(filename: string): string {
   const normalized = filename.replace(/\\/g, "/");
   const basename = path.posix.basename(normalized).normalize("NFKD");
@@ -42,15 +56,28 @@ export function buildOriginalStorageKey(input: {
   filename: string;
 }): string {
   const safeFilename = sanitizeFilename(input.filename);
+  const shootId = assertSafeStorageSegment(input.shootId, "shootId");
+  const uploadBatchId = assertSafeStorageSegment(input.uploadBatchId, "uploadBatchId");
+  const assetId = assertSafeStorageSegment(input.assetId, "assetId");
+
   return assertSafeStorageKey(
-    [
-      "shoots",
-      input.shootId,
-      "uploads",
-      input.uploadBatchId,
-      "originals",
-      `${input.assetId}-${safeFilename}`
-    ].join("/")
+    ["shoots", shootId, "uploads", uploadBatchId, "originals", `${assetId}-${safeFilename}`].join(
+      "/"
+    )
+  );
+}
+
+export function buildThumbnailStorageKey(input: {
+  shootId: string;
+  uploadBatchId: string;
+  assetId: string;
+}): string {
+  const shootId = assertSafeStorageSegment(input.shootId, "shootId");
+  const uploadBatchId = assertSafeStorageSegment(input.uploadBatchId, "uploadBatchId");
+  const assetId = assertSafeStorageSegment(input.assetId, "assetId");
+
+  return assertSafeStorageKey(
+    ["shoots", shootId, "uploads", uploadBatchId, "thumbnails", `${assetId}.jpg`].join("/")
   );
 }
 

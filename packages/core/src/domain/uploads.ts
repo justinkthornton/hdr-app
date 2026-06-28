@@ -12,6 +12,7 @@ export type Asset = {
   uploadBatchId: string | null;
   originalFilename: string;
   storageKey: string;
+  thumbnailStorageKey: string | null;
   mimeType: string;
   fileExt: string;
   fileSizeBytes: number;

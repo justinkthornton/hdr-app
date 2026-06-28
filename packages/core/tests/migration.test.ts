@@ -6,7 +6,10 @@ describe("phase 1 migration smoke test", () => {
     const migrations = await readMigrationFiles();
     const sql = migrations.map((migration) => migration.sql).join("\n");
 
-    expect(migrations.map((migration) => migration.filename)).toEqual(["001_phase_1_schema.sql"]);
+    expect(migrations.map((migration) => migration.filename)).toEqual([
+      "001_phase_1_schema.sql",
+      "002_phase_2a_thumbnails.sql"
+    ]);
 
     for (const table of [
       "shoots",
@@ -21,6 +24,8 @@ describe("phase 1 migration smoke test", () => {
     ]) {
       expect(sql).toContain(`create table ${table}`);
     }
+
+    expect(sql).toContain("thumbnail_storage_key");
 
     for (const index of [
       "shoots_created_at_idx",

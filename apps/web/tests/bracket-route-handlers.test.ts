@@ -15,6 +15,7 @@ const asset: Asset = {
   uploadBatchId: "batch-1",
   originalFilename: "front.jpg",
   storageKey: "shoots/shoot-1/uploads/batch-1/originals/asset-1-front.jpg",
+  thumbnailStorageKey: "shoots/shoot-1/uploads/batch-1/thumbnails/asset-1.jpg",
   mimeType: "image/jpeg",
   fileExt: ".jpg",
   fileSizeBytes: 1000,
@@ -68,9 +69,10 @@ const deps: BracketGroupRouteDeps = {
 describe("bracket review route handlers", () => {
   it("lists shoot assets", async () => {
     const response = await handleListAssetsForShoot("shoot-1", deps);
-    const body = (await response.json()) as { assets: Asset[] };
+    const body = (await response.json()) as { assets: (Asset & { thumbnailUrl?: string })[] };
 
     expect(body.assets).toHaveLength(1);
+    expect(body.assets[0]?.thumbnailUrl).toBe("/api/assets/asset-1/thumbnail");
   });
 
   it("sanitizes API-key asset responses", async () => {
@@ -87,6 +89,7 @@ describe("bracket review route handlers", () => {
     });
     expect(body.assets[0]).not.toHaveProperty("storageKey");
     expect(body.assets[0]).not.toHaveProperty("rawMetadata");
+    expect(body.assets[0]).not.toHaveProperty("thumbnailUrl");
   });
 
   it("lists bracket groups", async () => {

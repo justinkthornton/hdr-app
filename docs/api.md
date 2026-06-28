@@ -126,12 +126,19 @@ Response:
     "status": "uploaded",
     "originalFileCount": 7
   },
+  "groupSummary": {
+    "uploadedPhotoCount": 7,
+    "detectedGroupCount": 1,
+    "detectedSevenShotGroupCount": 1,
+    "detectedThreeShotGroupCount": 0,
+    "ambiguousPhotoCount": 0
+  },
   "assets": [],
   "bracketGroups": []
 }
 ```
 
-JPEG metadata extraction runs during upload. RAW/TIFF files are accepted and stored; metadata may be partial until fixtures and parser support are added.
+JPEG metadata extraction and JPEG thumbnail generation run during upload. RAW/TIFF files are accepted and stored; metadata may be partial and thumbnails are deferred until fixtures and parser support are added.
 
 Limit failures return:
 
@@ -147,7 +154,11 @@ If a later asset or group write fails after storage writes, the handler attempts
 
 ### GET /api/shoots/:shootId/assets
 
-Admin session required. Lists uploaded originals and extracted metadata. Admin asset responses include internal `storageKey` and `rawMetadata` fields for the local review UI.
+Admin session required. Lists uploaded originals and extracted metadata. Admin asset responses include `thumbnailUrl` for the protected preview route plus internal `storageKey` and `rawMetadata` fields for the local review UI.
+
+### GET /api/assets/:assetId/thumbnail
+
+Admin session required. Returns the locally generated JPEG thumbnail for a JPEG asset. The response is `404` when the asset has no thumbnail, such as RAW/TIFF files or older uploads created before thumbnail generation. This endpoint does not expose local storage paths.
 
 ### GET /api/shoots/:shootId/bracket-groups
 
@@ -191,11 +202,11 @@ Requires `x-api-key`. Same response shape as `GET /api/shoots/:shootId`.
 
 ### POST /api/v1/shoots/:shootId/uploads
 
-Requires `x-api-key`. Same multipart behavior as `POST /api/shoots/:shootId/uploads`. Asset objects in the response omit internal `storageKey` and broad `rawMetadata` fields.
+Requires `x-api-key`. Same multipart behavior as `POST /api/shoots/:shootId/uploads`. Asset objects in the response omit internal `storageKey`, `thumbnailUrl`, and broad `rawMetadata` fields.
 
 ### GET /api/v1/shoots/:shootId/assets
 
-Requires `x-api-key`. Lists uploaded originals and extracted metadata, but omits internal `storageKey` and broad `rawMetadata` fields by default. Public asset fields include `originalFilename`, `mimeType`, `fileExt`, `fileSizeBytes`, `width`, `height`, `cameraModel`, `lensModel`, `capturedAt`, `exposureTime`, `aperture`, `iso`, `exposureBias`, and `extractionStatus`.
+Requires `x-api-key`. Lists uploaded originals and extracted metadata, but omits internal `storageKey`, `thumbnailUrl`, and broad `rawMetadata` fields by default. Public asset fields include `originalFilename`, `mimeType`, `fileExt`, `fileSizeBytes`, `width`, `height`, `cameraModel`, `lensModel`, `capturedAt`, `exposureTime`, `aperture`, `iso`, `exposureBias`, and `extractionStatus`.
 
 ### GET /api/v1/shoots/:shootId/bracket-groups
 

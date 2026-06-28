@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
 import {
   buildOriginalStorageKey,
+  buildThumbnailStorageKey,
   extractAssetMetadata,
+  generateJpegThumbnail,
   getFileExtension,
   groupAssetsForUploadBatch,
   inferMimeType,
@@ -20,6 +22,7 @@ import {
   serializeUploadBatch,
   type AssetSerializationMode
 } from "./phase-2a-serializers";
+import { buildUploadGroupSummary } from "./upload-summary";
 
 export type UploadLimits = {
   maxFiles: number;
@@ -42,6 +45,7 @@ export type UploadRouteDeps = {
     uploadBatchId: string;
     originalFilename: string;
     storageKey: string;
+    thumbnailStorageKey?: string | null;
     mimeType: string;
     fileExt: string;
     fileSizeBytes: number;
@@ -229,6 +233,30 @@ export async function handleUploadFiles(
       });
       writtenStorageKeys.push(storageKey);
 
+      const thumbnailBody = await generateJpegThumbnail({
+        filename: file.name,
+        body
+      });
+      const thumbnailStorageKey = thumbnailBody
+        ? buildThumbnailStorageKey({
+            shootId,
+            uploadBatchId: uploadBatch.id,
+            assetId
+          })
+        : null;
+
+      if (thumbnailBody && thumbnailStorageKey) {
+        await deps.storage.putObject({
+          key: thumbnailStorageKey,
+          body: thumbnailBody,
+          metadata: {
+            contentType: "image/jpeg",
+            sizeBytes: thumbnailBody.byteLength
+          }
+        });
+        writtenStorageKeys.push(thumbnailStorageKey);
+      }
+
       createdAssets.push(
         await deps.createAsset({
           id: assetId,
@@ -236,6 +264,7 @@ export async function handleUploadFiles(
           uploadBatchId: uploadBatch.id,
           originalFilename: file.name,
           storageKey,
+          thumbnailStorageKey,
           mimeType,
           fileExt,
           fileSizeBytes: body.byteLength,
@@ -254,6 +283,10 @@ export async function handleUploadFiles(
     return jsonResponse(
       {
         uploadBatch: serializeUploadBatch(uploadBatch),
+        groupSummary: buildUploadGroupSummary({
+          uploadedPhotoCount: createdAssets.length,
+          bracketGroups
+        }),
         assets: createdAssets.map((asset) => serializeAsset(asset, { mode: options.assetMode })),
         bracketGroups: bracketGroups.map((group) =>
           serializeBracketGroup(group, { mode: options.assetMode })

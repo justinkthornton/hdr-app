@@ -2,6 +2,7 @@ import {
   createAsset,
   createBracketGroups,
   createUploadBatch,
+  getAsset,
   getBracketGroupWithAssets,
   getPool,
   getShoot,
@@ -14,9 +15,10 @@ import {
   updateBracketGroupStatus
 } from "@structure-locked-hdr/core";
 import type { BracketGroupRouteDeps } from "./bracket-route-handlers";
+import type { ThumbnailRouteDeps } from "./thumbnail-route-handlers";
 import type { UploadRouteDeps } from "./upload-route-handlers";
 
-export function makePhase2ADeps(): UploadRouteDeps & BracketGroupRouteDeps {
+export function makePhase2ADeps(): UploadRouteDeps & BracketGroupRouteDeps & ThumbnailRouteDeps {
   const pool = getPool();
   const env = parseRuntimeEnv();
 
@@ -31,6 +33,7 @@ export function makePhase2ADeps(): UploadRouteDeps & BracketGroupRouteDeps {
     createUploadBatch: (input) => createUploadBatch(pool, input),
     createAsset: (input) => createAsset(pool, input),
     createBracketGroups: (input) => createBracketGroups(pool, input),
+    getAsset: (assetId) => getAsset(pool, assetId),
     listAssetsForShoot: (shootId) => listAssetsForShoot(pool, shootId),
     listAssetsForUploadBatch: (uploadBatchId) => listAssetsForUploadBatch(pool, uploadBatchId),
     listBracketGroupsForShoot: (shootId) => listBracketGroupsForShoot(pool, shootId),

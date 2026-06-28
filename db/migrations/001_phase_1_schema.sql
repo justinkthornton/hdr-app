@@ -23,6 +23,7 @@ create table assets (
   upload_batch_id uuid null references upload_batches(id),
   original_filename text not null,
   storage_key text not null,
+  thumbnail_storage_key text null,
   mime_type text not null,
   file_ext text not null,
   file_size_bytes bigint not null,

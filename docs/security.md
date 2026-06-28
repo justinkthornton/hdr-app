@@ -31,6 +31,8 @@ Local variables:
 Do not commit:
 
 - client photos
+- local fixtures
+- generated thumbnails
 - generated outputs
 - API keys
 - passwords
@@ -39,5 +41,7 @@ Do not commit:
 - database credentials
 - Photomatix license keys
 - `.env` or `.env.*` files
+
+Generated JPEG thumbnails are stored under `LOCAL_STORAGE_ROOT` and served only through the admin-protected thumbnail endpoint. Do not expose thumbnail storage keys or local filesystem paths in public/API-key responses.
 
 Use placeholders, variable names, or 1Password references in docs and examples.

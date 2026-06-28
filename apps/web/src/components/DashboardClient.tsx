@@ -26,6 +26,34 @@ const emptyForm = {
   tags: ""
 };
 
+function isSmokeOrTestShoot(shoot: ShootSummary): boolean {
+  const searchableText = [
+    shoot.name,
+    shoot.clientName,
+    shoot.propertyAddress,
+    shoot.notes,
+    ...shoot.tags
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return searchableText.includes("smoke") || searchableText.includes("test");
+}
+
+function sortShootsForReview(shoots: ShootSummary[]): ShootSummary[] {
+  return [...shoots].sort((left, right) => {
+    const leftIsTest = isSmokeOrTestShoot(left);
+    const rightIsTest = isSmokeOrTestShoot(right);
+
+    if (leftIsTest !== rightIsTest) {
+      return leftIsTest ? 1 : -1;
+    }
+
+    return new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime();
+  });
+}
+
 export default function DashboardClient(): React.ReactElement {
   const [shoots, setShoots] = useState<ShootSummary[]>([]);
   const [form, setForm] = useState(emptyForm);
@@ -49,7 +77,7 @@ export default function DashboardClient(): React.ReactElement {
     }
 
     const body = (await response.json()) as ShootResponse;
-    setShoots(body.shoots);
+    setShoots(sortShootsForReview(body.shoots));
     setIsLoading(false);
   }
 
@@ -102,7 +130,7 @@ export default function DashboardClient(): React.ReactElement {
       <header className="topbar">
         <div className="brand">
           <h1>Structure-Locked HDR</h1>
-          <p>Phase 1 admin control surface</p>
+          <p>Phase 2A bracket upload review</p>
         </div>
         <button className="secondary" type="button" onClick={logout}>
           Sign out
@@ -160,28 +188,47 @@ export default function DashboardClient(): React.ReactElement {
         </form>
 
         <div className="panel">
-          <h2>Shoots</h2>
+          <div className="section-heading">
+            <div>
+              <h2>Shoots</h2>
+              <p className="muted">
+                Open a shoot to upload bracket photos and review detected groups.
+              </p>
+            </div>
+          </div>
           {isLoading ? <p className="muted">Loading shoots...</p> : null}
           {!isLoading && shoots.length === 0 ? <p className="muted">No shoots yet.</p> : null}
           <div className="shoot-list">
-            {shoots.map((shoot) => (
-              <Link className="shoot-card" href={`/shoots/${shoot.id}`} key={shoot.id}>
-                <h3>{shoot.name}</h3>
-                <p className="muted">
-                  {[shoot.clientName, shoot.propertyAddress].filter(Boolean).join(" | ") ||
-                    "No client or address yet"}
-                </p>
-                {shoot.tags.length > 0 ? (
-                  <div className="tag-row">
-                    {shoot.tags.map((tag) => (
-                      <span className="tag" key={tag}>
-                        {tag}
-                      </span>
-                    ))}
+            {shoots.map((shoot) => {
+              const isTestShoot = isSmokeOrTestShoot(shoot);
+
+              return (
+                <article className="shoot-card" key={shoot.id}>
+                  <div className="shoot-card-title">
+                    <Link href={`/shoots/${shoot.id}`}>
+                      <h3>{shoot.name}</h3>
+                    </Link>
+                    {isTestShoot ? <span className="tag warning-tag">Test/smoke</span> : null}
                   </div>
-                ) : null}
-              </Link>
-            ))}
+                  <p className="muted">
+                    {[shoot.clientName, shoot.propertyAddress].filter(Boolean).join(" | ") ||
+                      "No client or address yet"}
+                  </p>
+                  {shoot.tags.length > 0 ? (
+                    <div className="tag-row">
+                      {shoot.tags.map((tag) => (
+                        <span className="tag" key={tag}>
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                  <Link className="button-link" href={`/shoots/${shoot.id}`}>
+                    Open shoot
+                  </Link>
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>

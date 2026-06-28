@@ -13,6 +13,7 @@ function asset(
     uploadBatchId: "batch-1",
     originalFilename: `image-${String(index).padStart(3, "0")}.jpg`,
     storageKey: `shoots/shoot-1/uploads/batch-1/originals/asset-${index}.jpg`,
+    thumbnailStorageKey: null,
     mimeType: "image/jpeg",
     fileExt: ".jpg",
     fileSizeBytes: 1000,
