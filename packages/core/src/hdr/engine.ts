@@ -275,6 +275,51 @@ export class PhotomatixCliEngine implements HdrEngine {
     });
   }
 
+  async checkLicense(timeoutMs = this.defaultTimeoutMs): Promise<HdrRenderResult> {
+    const executableError = await this.executableError();
+
+    if (executableError) {
+      return executableError;
+    }
+
+    if (!this.options.licenseKey) {
+      return {
+        engine: "photomatix-cli",
+        success: true,
+        exitCode: null,
+        timedOut: false,
+        commandRedacted: buildRedactedCommand(this.options.executablePath, []),
+        stdoutRedacted: "",
+        stderrRedacted: "",
+        outputPaths: [],
+        error: null,
+        metadata: {
+          stage: "license",
+          skipped: true
+        }
+      };
+    }
+
+    const licenseResult = await this.loadLicenseIfPresent(timeoutMs);
+
+    return (
+      licenseResult ?? {
+        engine: "photomatix-cli",
+        success: true,
+        exitCode: 0,
+        timedOut: false,
+        commandRedacted: buildRedactedCommand(this.options.executablePath, ["-ll", "[REDACTED]"]),
+        stdoutRedacted: "",
+        stderrRedacted: "",
+        outputPaths: [],
+        error: null,
+        metadata: {
+          stage: "license"
+        }
+      }
+    );
+  }
+
   async render(request: HdrRenderRequest): Promise<HdrRenderResult> {
     const executableError = await this.executableError();
 

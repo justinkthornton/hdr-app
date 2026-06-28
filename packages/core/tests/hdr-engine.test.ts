@@ -110,6 +110,37 @@ describe("HDR engine seam", () => {
     expect(result.stderrRedacted).toContain("[REDACTED]");
   });
 
+  it("loads PhotomatixCL licenses with the documented -ll command shape", async () => {
+    const licenseKey = "secret-license-value";
+    const invocations: CommandInvocation[] = [];
+    const engine = new PhotomatixCliEngine({
+      executablePath: "/opt/photomatixcl/PhotomatixCL",
+      licenseKey,
+      checkExecutable: async () => true,
+      runCommand: async (input) => {
+        invocations.push(input);
+        return {
+          exitCode: 0,
+          timedOut: false,
+          stdout: "license loaded",
+          stderr: ""
+        };
+      }
+    });
+
+    const result = await engine.checkLicense(3_000);
+
+    expect(result.success).toBe(true);
+    expect(invocations).toHaveLength(1);
+    expect(invocations[0]).toMatchObject({
+      executablePath: "/opt/photomatixcl/PhotomatixCL",
+      args: ["-ll", licenseKey],
+      timeoutMs: 3_000
+    });
+    expect(result.commandRedacted).not.toContain(licenseKey);
+    expect(result.commandRedacted).toContain("[REDACTED]");
+  });
+
   it("returns a structured error when PhotomatixCL is missing", async () => {
     const engine = new PhotomatixCliEngine({
       executablePath: "/missing/PhotomatixCL",

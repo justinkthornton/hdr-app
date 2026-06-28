@@ -81,6 +81,7 @@ type HdrJobDetail = {
 };
 
 type HdrJobOptions = {
+  engineMode: "fake" | "photomatix";
   preset: string;
   outputMlsJpeg: boolean;
   outputFullJpeg: boolean;
@@ -89,6 +90,7 @@ type HdrJobOptions = {
 
 const acceptedFileTypes = ".jpg,.jpeg,.tif,.tiff,.cr3,.cr2,.dng,.arw,.nef,.raf";
 const defaultHdrJobOptions: HdrJobOptions = {
+  engineMode: "fake",
   preset: "Natural",
   outputMlsJpeg: true,
   outputFullJpeg: true,
@@ -152,14 +154,19 @@ function jobStatusLabel(status: HdrJobDetail["status"]): string {
   }
 }
 
-function exportKindLabel(kind: HdrExportDetail["kind"]): string {
+function exportKindLabel(
+  kind: HdrExportDetail["kind"],
+  engineMode: HdrJobDetail["engineMode"]
+): string {
+  const suffix = engineMode === "fake" ? "placeholder" : "Photomatix output";
+
   switch (kind) {
     case "mls_jpeg":
-      return "MLS placeholder";
+      return `MLS ${suffix}`;
     case "full_jpeg":
-      return "Full placeholder";
+      return `Full ${suffix}`;
     case "tiff":
-      return "TIFF placeholder";
+      return `TIFF ${suffix}`;
   }
 }
 
@@ -171,6 +178,22 @@ function requestedOutputs(job: HdrJobDetail): string {
   ]
     .filter(Boolean)
     .join(", ");
+}
+
+function jobErrorMessage(job: HdrJobDetail): string | null {
+  if (!job.errorMessage) {
+    return null;
+  }
+
+  if (job.errorMessage === "photomatixcl_missing_or_not_executable") {
+    return "PhotomatixCL is not configured. Use fake mode or set PHOTOMATIXCL_PATH.";
+  }
+
+  if (job.errorMessage === "photomatix_output_missing") {
+    return "PhotomatixCL finished without a readable output file.";
+  }
+
+  return job.errorMessage;
 }
 
 function groupTitle(group: BracketGroupDetail): string {
@@ -458,8 +481,7 @@ export default function ShootDetailClient({ shootId }: { shootId: string }): Rea
         "content-type": "application/json"
       },
       body: JSON.stringify({
-        ...options,
-        engineMode: "fake"
+        ...options
       })
     });
 
@@ -475,7 +497,9 @@ export default function ShootDetailClient({ shootId }: { shootId: string }): Rea
     }
 
     const createBody = (await createResponse.json()) as { hdrJob: HdrJobDetail };
-    setProcessingStatus("Running fake HDR engine...");
+    setProcessingStatus(
+      options.engineMode === "fake" ? "Running fake HDR engine..." : "Running PhotomatixCL..."
+    );
     const processResponse = await fetch(`/api/hdr-jobs/${createBody.hdrJob.id}/process`, {
       method: "POST"
     });
@@ -517,13 +541,30 @@ export default function ShootDetailClient({ shootId }: { shootId: string }): Rea
               onChange={(event) => updateHdrOption(group.id, "preset", event.target.value)}
             />
           </label>
+          <label className="preset-field" htmlFor={`engine-${group.id}`}>
+            Engine
+            <select
+              id={`engine-${group.id}`}
+              value={options.engineMode}
+              onChange={(event) =>
+                updateHdrOption(
+                  group.id,
+                  "engineMode",
+                  event.target.value === "photomatix" ? "photomatix" : "fake"
+                )
+              }
+            >
+              <option value="fake">Fake safe mode</option>
+              <option value="photomatix">PhotomatixCL</option>
+            </select>
+          </label>
           <label className="checkbox-row">
             <input
               type="checkbox"
               checked={options.outputMlsJpeg}
               onChange={(event) => updateHdrOption(group.id, "outputMlsJpeg", event.target.checked)}
             />
-            MLS placeholder
+            MLS export
           </label>
           <label className="checkbox-row">
             <input
@@ -533,7 +574,7 @@ export default function ShootDetailClient({ shootId }: { shootId: string }): Rea
                 updateHdrOption(group.id, "outputFullJpeg", event.target.checked)
               }
             />
-            Full placeholder
+            Full export
           </label>
           <label className="checkbox-row">
             <input
@@ -541,7 +582,7 @@ export default function ShootDetailClient({ shootId }: { shootId: string }): Rea
               checked={options.outputTiff}
               onChange={(event) => updateHdrOption(group.id, "outputTiff", event.target.checked)}
             />
-            TIFF placeholder
+            TIFF export
           </label>
           <button
             type="button"
@@ -567,7 +608,14 @@ export default function ShootDetailClient({ shootId }: { shootId: string }): Rea
                   </div>
                   <span className="status-pill">{jobStatusLabel(job.status)}</span>
                 </div>
-                {job.errorMessage ? <p className="error">Error: {job.errorMessage}</p> : null}
+                {job.engineMode === "photomatix" ? (
+                  <p className="muted">Photomatix trial output may be watermarked.</p>
+                ) : (
+                  <p className="muted">Fake exports are placeholders, not real HDR images.</p>
+                )}
+                {jobErrorMessage(job) ? (
+                  <p className="error">Error: {jobErrorMessage(job)}</p>
+                ) : null}
                 {job.exports.length > 0 ? (
                   <div className="export-list">
                     {job.exports.map((hdrExport) => (
@@ -576,7 +624,7 @@ export default function ShootDetailClient({ shootId }: { shootId: string }): Rea
                         href={hdrExport.downloadUrl}
                         key={hdrExport.id}
                       >
-                        {exportKindLabel(hdrExport.kind)}
+                        {exportKindLabel(hdrExport.kind, job.engineMode)}
                         {hdrExport.fileSizeBytes
                           ? ` (${formatBytes(hdrExport.fileSizeBytes)})`
                           : ""}
@@ -605,7 +653,7 @@ export default function ShootDetailClient({ shootId }: { shootId: string }): Rea
       <header className="topbar">
         <div className="brand">
           <h1>{shoot?.name ?? "Shoot detail"}</h1>
-          <p>Phase 2C upload, bracket review, and fake HDR exports</p>
+          <p>Phase 2D upload, bracket review, and HDR exports</p>
         </div>
         <Link href="/dashboard">
           <button className="secondary" type="button">
@@ -797,12 +845,12 @@ export default function ShootDetailClient({ shootId }: { shootId: string }): Rea
             ) : null}
             {bracketGroups.length > 0 ? (
               <p className="muted">
-                Approved groups can now run through the fake HDR engine and create download files.
+                Approved groups can run through fake safe mode or opt-in PhotomatixCL processing.
               </p>
             ) : null}
             {bracketGroups.length > 0 &&
             bracketGroups.every((group) => group.status === "approved") ? (
-              <p className="muted">Approved groups are ready for local fake HDR processing.</p>
+              <p className="muted">Approved groups are ready for local HDR processing.</p>
             ) : null}
             {processingStatus ? <p className="muted">{processingStatus}</p> : null}
           </div>

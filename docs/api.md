@@ -1,6 +1,6 @@
 # API
 
-Phase 2C implements health, shoot management, local batch uploads, asset metadata, bracket-group review, fake HDR job processing, export records, downloads, and API-key read/control endpoints.
+Phase 2D implements health, shoot management, local batch uploads, asset metadata, bracket-group review, fake HDR job processing, opt-in Photomatix job processing, export records, downloads, and API-key read/control endpoints.
 
 ## Auth
 
@@ -234,7 +234,7 @@ Admin session required. Returns one job and its safe export metadata.
 
 ### POST /api/hdr-jobs/:jobId/process
 
-Admin session required. Processes the job immediately. In fake mode, this creates placeholder text exports through local storage. If Photomatix mode is requested without `PHOTOMATIXCL_PATH`, the job is marked `failed` with `photomatixcl_missing_or_not_executable`.
+Admin session required. Processes the job immediately. In fake mode, this creates placeholder text exports through local storage. In Photomatix mode, the job stages local inputs, runs `PhotomatixCliEngine`, confirms the output file exists, stores the produced output through local storage, and creates export rows. If Photomatix mode is requested without `PHOTOMATIXCL_PATH`, the job is marked `failed` with `photomatixcl_missing_or_not_executable`.
 
 ### GET /api/hdr-jobs/:jobId/exports
 
@@ -242,7 +242,7 @@ Admin session required. Lists safe export metadata for one job.
 
 ### GET /api/exports/:exportId/download
 
-Admin session required. Downloads a generated export file. Phase 2C fake exports are text placeholders that clearly say they are not real HDR images.
+Admin session required. Downloads a generated export file. Fake exports are text placeholders that clearly say they are not real HDR images. Photomatix exports are the produced image file; trial output may be watermarked.
 
 Job/export responses are safe to expose to the local UI and API clients. They include IDs, status, preset, output choices, sanitized `commandRedacted`, safe `errorMessage`, export kind, MIME type, file size, and download URLs. They do not expose internal `storageKey`, `LOCAL_STORAGE_ROOT`, raw local output paths, database URLs, API keys, passwords, license keys, or raw secret values.
 

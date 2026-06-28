@@ -1,4 +1,4 @@
-import { mkdtemp } from "node:fs/promises";
+import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -238,5 +238,91 @@ describe("HDR job runner", () => {
     expect(result?.hdrJob.status).toBe("failed");
     expect(result?.hdrJob.errorMessage).toBe("photomatixcl_missing_or_not_executable");
     expect(result?.exports).toHaveLength(0);
+  });
+
+  it("imports a Photomatix output file into requested exports", async () => {
+    const storage = makeStorage();
+    const localStorageRoot = await mkdtemp(path.join(os.tmpdir(), "hdr-runner-"));
+    const exports: HdrExport[] = [];
+    let currentJob = job({
+      engineMode: "photomatix"
+    });
+
+    const result = await processHdrJob(currentJob.id, {
+      storage,
+      localStorageRoot,
+      photomatixclPath: "/opt/photomatixcl-local/PhotomatixCL",
+      photomatixCheckExecutable: async () => true,
+      photomatixRunCommand: async (input) => {
+        const outputStem = input.args[input.args.indexOf("-o") + 1]!;
+        await mkdir(path.dirname(outputStem), {
+          recursive: true
+        });
+        await writeFile(`${outputStem}.jpg`, Buffer.from("fake real photomatix jpeg"));
+        return {
+          exitCode: 0,
+          timedOut: false,
+          stdout: `wrote ${outputStem}.jpg`,
+          stderr: ""
+        };
+      },
+      getHdrJob: async () => currentJob,
+      getBracketGroupWithAssets: async () => group(),
+      markHdrJobRunning: async () => {
+        currentJob = {
+          ...currentJob,
+          status: "running",
+          startedAt: now
+        };
+        return currentJob;
+      },
+      markHdrJobSucceeded: async (_jobId, input) => {
+        currentJob = {
+          ...currentJob,
+          status: "succeeded",
+          finishedAt: now,
+          commandRedacted: input.commandRedacted
+        };
+        return currentJob;
+      },
+      markHdrJobFailed: async (_jobId, input) => {
+        currentJob = {
+          ...currentJob,
+          status: "failed",
+          errorMessage: input.errorMessage,
+          commandRedacted: input.commandRedacted ?? null
+        };
+        return currentJob;
+      },
+      createExport: async (input) => {
+        const created: HdrExport = {
+          id: `export-${exports.length + 1}`,
+          shootId: input.shootId,
+          hdrJobId: input.hdrJobId,
+          kind: input.kind,
+          storageKey: input.storageKey,
+          mimeType: input.mimeType,
+          width: input.width ?? null,
+          height: input.height ?? null,
+          fileSizeBytes: input.fileSizeBytes ?? null,
+          createdAt: now
+        };
+        exports.push(created);
+        return created;
+      },
+      listExportsForJob: async () => exports
+    });
+
+    expect(result?.hdrJob.status).toBe("succeeded");
+    expect(result?.hdrJob.commandRedacted).toContain("[LOCAL_STORAGE_ROOT]");
+    expect(result?.hdrJob.commandRedacted).toContain("[PHOTOMATIXCL_PATH]");
+    expect(result?.exports).toHaveLength(2);
+    expect(result?.exports.map((hdrExport) => hdrExport.kind)).toEqual(["mls_jpeg", "full_jpeg"]);
+    expect(result?.exports.every((hdrExport) => hdrExport.mimeType === "image/jpeg")).toBe(true);
+    expect(storage.read(result!.exports[0]!.storageKey)?.toString("utf8")).toBe(
+      "fake real photomatix jpeg"
+    );
+    expect(result?.hdrJob.commandRedacted).not.toContain(localStorageRoot);
+    expect(result?.hdrJob.commandRedacted).not.toContain("/opt/photomatixcl-local/PhotomatixCL");
   });
 });

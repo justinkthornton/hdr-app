@@ -2,7 +2,7 @@
   "name": "structure-locked-hdr-service",
   "version": "0.1.0",
   "private": true,
-  "description": "Local structure-locked HDR processing service with fake Phase 2C job/export workflow.",
+  "description": "Local structure-locked HDR processing service with fake default and opt-in Photomatix workflow.",
   "packageManager": "pnpm@11.7.0",
   "type": "module",
   "scripts": {

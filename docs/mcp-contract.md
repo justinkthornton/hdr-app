@@ -106,7 +106,7 @@ REST backing: `POST /api/v1/shoots/:shootId/uploads`
 
 This endpoint is implemented as a multipart REST upload. It enforces the same local upload limits as the admin endpoint and returns `too_many_files`, `file_too_large`, or `batch_too_large` for limit failures. A future Hermes tool wrapper can call it when file transfer semantics are settled.
 
-## Implemented In Phase 2C
+## Implemented In Phase 2C/2D
 
 ### create_hdr_job
 
@@ -143,7 +143,7 @@ REST backing: `GET /api/v1/hdr-jobs/:hdrJobId`
 
 REST backing: `POST /api/v1/hdr-jobs/:hdrJobId/process`
 
-The Phase 2C acceptance path is fake mode. Fake processing creates placeholder text exports, not real HDR images.
+The safe default path is fake mode. Fake processing creates placeholder text exports, not real HDR images. Phase 2D also allows opt-in Photomatix processing through `engineMode: "photomatix"` when PhotomatixCL is configured locally.
 
 ### list_hdr_job_exports
 
@@ -153,7 +153,7 @@ REST backing: `GET /api/v1/hdr-jobs/:hdrJobId/exports`
 
 REST backing: `GET /api/v1/exports/:exportId/download`
 
-The download call returns the stored export file. API clients should treat fake Phase 2C exports as placeholders.
+The download call returns the stored export file. API clients should treat fake exports as placeholders. Photomatix exports are the produced image file and may be watermarked in trial mode.
 
 ## Still Planned
 
@@ -173,4 +173,4 @@ All `/api/v1/*` calls require `x-api-key`.
 
 There is no MCP server, no runtime AI model call, and no Codex credential path inside the app.
 
-Phase 2C job/export responses intentionally omit local storage keys, storage root paths, raw engine output paths, database URLs, API keys, passwords, license keys, and raw secret values.
+Phase 2C/2D job/export responses intentionally omit local storage keys, storage root paths, raw engine output paths, database URLs, API keys, passwords, license keys, and raw secret values.

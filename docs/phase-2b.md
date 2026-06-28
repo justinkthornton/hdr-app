@@ -108,8 +108,8 @@ Conditional when PhotomatixCL is installed:
 
 - Real PhotomatixCL binary validation depends on a local Linux ARM binary or approved explicit download URL.
 - Real bracket processing depends on local non-client JPEG fixtures.
-- Phase 2C still needs job creation, export rows, queue orchestration, reruns, and UI integration.
+- Phase 2C added job creation, export rows, and UI integration. Phase 2D added staged Photomatix validation and opt-in Photomatix job processing. Queue orchestration and reruns remain later work.
 
 ## Next Step
 
-Phase 2C should wire approved bracket groups into HDR jobs and generated exports using the engine seam built here.
+Supply a local PhotomatixCL binary and non-client JPEG smoke fixtures so the staged Phase 2D render path can move from `blocked` to `passed`.

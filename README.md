@@ -1,6 +1,6 @@
 # Structure-Locked HDR Service
 
-Internal real estate HDR processing service foundation. Phase 2A adds local batch upload, JPEG metadata extraction, JPEG thumbnails, EXIF/exposure-aware bracket grouping, and review/approval UI. Phase 2B adds the safe HDR engine seam and worker smoke path for PhotomatixCL validation. Phase 2C wires approved bracket groups into local HDR jobs, runs the fake engine, and creates downloadable placeholder export records. Real PhotomatixCL renders, reruns, and queues are still intentionally deferred.
+Internal real estate HDR processing service foundation. Phase 2A adds local batch upload, JPEG metadata extraction, JPEG thumbnails, EXIF/exposure-aware bracket grouping, and review/approval UI. Phase 2B adds the safe HDR engine seam and worker smoke path for PhotomatixCL validation. Phase 2C wires approved bracket groups into local HDR jobs, runs the fake engine, and creates downloadable placeholder export records. Phase 2D prepares staged real PhotomatixCL smoke validation and opt-in Photomatix job processing while keeping fake mode as the safe default.
 
 ## Stack
 
@@ -74,6 +74,12 @@ Run the fake worker smoke in Docker without changing normal app startup:
 docker compose --profile worker run --rm hdr-worker pnpm worker:smoke:fake
 ```
 
+Run the real Photomatix smoke only after mounting an ignored Linux ARM binary at `local-photomatixcl/PhotomatixCL` and setting `PHOTOMATIXCL_PATH=/opt/photomatixcl-local/PhotomatixCL`:
+
+```bash
+docker compose --profile worker run --rm hdr-worker pnpm worker:smoke:photomatix
+```
+
 ## Database
 
 Run migrations against the configured `DATABASE_URL`:
@@ -130,7 +136,7 @@ pnpm smoke:phase1
 pnpm worker:smoke:fake
 ```
 
-Phase 2C local validation also uses the running app to approve a bracket group, click `Process approved group`, and download the generated fake placeholder exports.
+Phase 2C/2D local validation also uses the running app to approve a bracket group, process it with fake mode or opt-in PhotomatixCL, and download generated exports.
 
 ## Phase 2A Scope
 
@@ -202,6 +208,23 @@ Not included:
 - real PhotomatixCL acceptance
 - committed real photos, generated HDR outputs, Photomatix binaries, or license keys
 
+## Phase 2D Scope
+
+Included:
+
+- staged Photomatix smoke receipts for binary, startup, license, fixture, and render checks.
+- redacted smoke output that avoids raw secrets, home paths, storage roots, fixture roots, and binary paths.
+- opt-in PhotomatixCL choice in the local job UI.
+- Photomatix output import into existing export records when a real output file is produced.
+- tests that simulate Photomatix output without requiring the real binary.
+
+Not included:
+
+- making PhotomatixCL mandatory
+- committing PhotomatixCL binaries, real photos, generated HDR outputs, or license keys
+- separate MLS resizing/full-size variants
+- background queue orchestration or reruns
+
 ## Phase 2 Preview
 
-Later Phase 2 work will add real PhotomatixCL-backed outputs, reruns, job queue orchestration, and broader RAW fixture validation.
+Later Phase 2 work will add output sizing, reruns, job queue orchestration, and broader RAW fixture validation after real PhotomatixCL is locally supplied and validated.

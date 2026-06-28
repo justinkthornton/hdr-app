@@ -6,10 +6,10 @@ This is an internal local-use service. Keep the GitHub repository private unless
 
 The repo ignores `.env` and `.env.*`; `.env.example` is the only env file intended for Git.
 
-Use the 1Password Environment named `HDR app` for local secrets. Mount it to:
+Use the 1Password Environment named `HDR app` for local secrets. Mount it to the repo-local env file:
 
 ```text
-/Users/justinthornton/Documents/Codex Apps/HDR app/.env
+.env
 ```
 
 Local variables:
@@ -50,5 +50,7 @@ Do not commit:
 Generated JPEG thumbnails are stored under `LOCAL_STORAGE_ROOT` and served only through the admin-protected thumbnail endpoint. Do not expose thumbnail storage keys or local filesystem paths in public/API-key responses.
 
 PhotomatixCL command strings, stdout, and stderr must be redacted before they are returned, logged, or stored. Never print the raw `PHOTOMATIX_LICENSE_KEY`.
+
+Photomatix smoke receipts must also redact local home paths, project roots, storage roots, fixture roots, generated output paths, and binary paths. Use `local-photomatixcl/` for local binaries and `local-fixtures/` for local fixture photos; both are ignored by Git.
 
 Use placeholders, variable names, or 1Password references in docs and examples.

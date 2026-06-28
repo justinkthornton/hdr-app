@@ -12,6 +12,8 @@ import {
 import {
   FakeHdrEngine,
   PhotomatixCliEngine,
+  type CommandInvocation,
+  type CommandRunResult,
   type HdrRenderResult
 } from "@structure-locked-hdr/core/hdr";
 
@@ -20,6 +22,8 @@ export type HdrJobRunnerDeps = {
   localStorageRoot: string;
   photomatixclPath: string;
   photomatixLicenseKey?: string;
+  photomatixCheckExecutable?: (executablePath: string) => Promise<boolean>;
+  photomatixRunCommand?: (input: CommandInvocation) => Promise<CommandRunResult>;
   getHdrJob(jobId: string): Promise<HdrJob | null>;
   getBracketGroupWithAssets(groupId: string): Promise<BracketGroup | null>;
   markHdrJobRunning(jobId: string): Promise<HdrJob | null>;
@@ -193,6 +197,14 @@ function engineForJob(job: HdrJob, deps: HdrJobRunnerDeps): FakeHdrEngine | Phot
 
     if (deps.photomatixLicenseKey) {
       options.licenseKey = deps.photomatixLicenseKey;
+    }
+
+    if (deps.photomatixCheckExecutable) {
+      options.checkExecutable = deps.photomatixCheckExecutable;
+    }
+
+    if (deps.photomatixRunCommand) {
+      options.runCommand = deps.photomatixRunCommand;
     }
 
     return new PhotomatixCliEngine(options);

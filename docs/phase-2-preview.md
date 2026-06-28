@@ -39,16 +39,19 @@ Phase 2 should add the HDR pipeline without changing the structure-locked premis
 - Store redacted command text in `hdr_jobs.command_redacted`.
 - Do not log license keys or raw secrets.
 - Phase 2C creates app-level HDR jobs and runs fake processing through the engine seam.
+- Phase 2D adds staged PhotomatixCL smoke reporting and opt-in Photomatix job processing.
 
 ## Exports
 
 - Phase 2C creates fake placeholder export files and stores export metadata in `exports`.
-- Later work should replace fake placeholders with real MLS JPEG, full JPEG, and optional TIFF outputs.
+- Phase 2D imports a produced Photomatix output into export records when the real engine is available.
+- Later work should add separate MLS sizing, full-size output handling, and optional TIFF variants.
 - Do not commit generated real HDR outputs.
 
 ## Job Orchestration
 
 - Phase 2C uses a process-now route for local MVP validation.
+- Phase 2D keeps the same process-now route for fake and opt-in Photomatix jobs.
 - Later work should add worker claiming of queued jobs, reruns, and stronger job event history.
 
 ## Fixture Testing

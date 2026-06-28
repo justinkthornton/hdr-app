@@ -1,25 +1,27 @@
 # PhotomatixCL
 
-As of 2026-06-28, Phase 2B treats PhotomatixCL as an optional local worker dependency, not as a committed repo artifact.
+As of 2026-06-28, the project treats PhotomatixCL as an optional local worker dependency, not as a committed repo artifact.
 
 ## Official Source Notes
 
 - HDRsoft’s PhotomatixCL download page lists PhotomatixCL as available for Linux and Windows, including separate Linux builds for ARM and Intel/AMD 64-bit architectures. Source: [HDRsoft PhotomatixCL download](https://www.hdrsoft.com/download/photomatixcl.html).
 - HDRsoft describes PhotomatixCL trial mode as non-expiring, with generated images watermarked. Source: [HDRsoft PhotomatixCL download](https://www.hdrsoft.com/download/photomatixcl.html).
 - HDRsoft documents license loading with the command shape `PhotomatixCL -ll <license-key>`. Source: [HDRsoft PhotomatixCL download](https://www.hdrsoft.com/download/photomatixcl.html).
-- Command details should be checked against HDRsoft’s current PhotomatixCL User Guide before Phase 2C production workflow work. Source: [HDRsoft PhotomatixCL User Guide](https://www.hdrsoft.com/download/PhotomatixCL-UserGuide.pdf).
+- Command details should be checked against HDRsoft’s current PhotomatixCL User Guide before production workflow work. Source: [HDRsoft PhotomatixCL User Guide](https://www.hdrsoft.com/download/PhotomatixCL-UserGuide.pdf).
 
 ## Local Apple Silicon Strategy
 
 Do not install PhotomatixCL directly on the Mac host for this project. For local Apple Silicon development, use a Linux ARM Docker worker container.
 
-Phase 2B provides:
+The project provides:
 
 - `hdr-worker` Docker Compose service behind the `worker` profile.
 - `docker/worker.Dockerfile`, based on Linux ARM when run through Compose.
 - `docker/install-photomatixcl.sh`, an opt-in helper for explicit download/install attempts.
 - `PHOTOMATIXCL_PATH`, pointing to the binary inside the worker container.
 - `HDR_ENGINE_MODE`, defaulting to `fake`.
+- staged smoke reporting for binary, startup, license, fixture, and render checks.
+- opt-in app job processing with `engineMode: "photomatix"`.
 
 The normal app stack does not require PhotomatixCL.
 
@@ -62,6 +64,14 @@ Run the real smoke only after the binary exists:
 ```bash
 docker compose --profile worker run --rm hdr-worker pnpm worker:smoke:photomatix
 ```
+
+The smoke output redacts local user paths, storage roots, fixture roots, the binary path, and license values. Generated smoke outputs go under:
+
+```text
+LOCAL_STORAGE_ROOT/phase-2b-photomatix-smoke/
+```
+
+If the binary or fixtures are missing, the smoke reports `blocked` and names the blocked stage.
 
 ## Optional Download Helper
 

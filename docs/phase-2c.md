@@ -38,9 +38,11 @@ Each file clearly says it is a Phase 2C placeholder and not a real HDR image.
 
 `HDR_ENGINE_MODE=fake` is the acceptance path.
 
-`HDR_ENGINE_MODE=photomatix` and request-level `engineMode: "photomatix"` are supported behind the existing Phase 2B engine seam. If `PHOTOMATIXCL_PATH` is missing or not executable, the job is marked `failed` with `photomatixcl_missing_or_not_executable`. A Photomatix license is not required for Phase 2C acceptance.
+`HDR_ENGINE_MODE=photomatix` and request-level `engineMode: "photomatix"` are supported behind the existing Phase 2B engine seam. If `PHOTOMATIXCL_PATH` is missing or not executable, the job is marked `failed` with `photomatixcl_missing_or_not_executable`. A Photomatix license is not required for Phase 2C/2D acceptance.
 
 The app still must not log or expose `PHOTOMATIX_LICENSE_KEY`.
+
+Phase 2D adds a UI engine selector and real-output import path, but fake remains the default and safe acceptance path.
 
 ## Not Built
 
