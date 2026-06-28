@@ -10,7 +10,7 @@ import type {
 import { handleUploadFiles, type UploadRouteDeps } from "../src/lib/upload-route-handlers";
 
 const defaultUploadLimits = {
-  maxFiles: 9,
+  maxFiles: 30,
   maxFileBytes: 104857600,
   maxBatchBytes: 524288000
 };
@@ -254,10 +254,11 @@ describe("upload route handler", () => {
       shoot.id,
       deps
     );
-    const body = (await response.json()) as { error: string };
+    const body = (await response.json()) as { error: string; maxFiles: number };
 
     expect(response.status).toBe(400);
     expect(body.error).toBe("too_many_files");
+    expect(body.maxFiles).toBe(1);
     expect(deps.storage.getPutCount()).toBe(0);
     expect(deps.assets).toHaveLength(0);
     expect(deps.bracketGroups).toHaveLength(0);

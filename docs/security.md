@@ -23,8 +23,11 @@ Local variables:
 - `MAX_UPLOAD_FILES`
 - `MAX_UPLOAD_FILE_BYTES`
 - `MAX_UPLOAD_BATCH_BYTES`
+- `HDR_ENGINE_MODE`
+- `PHOTOMATIXCL_PATH`
+- `PHOTOMATIX_LICENSE_KEY`
 
-`DATABASE_URL`, `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, and `API_KEY` are required for the local app. `MAX_UPLOAD_FILES`, `MAX_UPLOAD_FILE_BYTES`, and `MAX_UPLOAD_BATCH_BYTES` are defaulted local safety knobs, not secrets. `PHOTOMATIX_LICENSE_KEY` is reserved for Phase 2 and may be empty during Phase 2A.
+`DATABASE_URL`, `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, and `API_KEY` are required for the local app. `MAX_UPLOAD_FILES`, `MAX_UPLOAD_FILE_BYTES`, `MAX_UPLOAD_BATCH_BYTES`, `HDR_ENGINE_MODE`, and `PHOTOMATIXCL_PATH` are local configuration knobs, not secrets. `PHOTOMATIX_LICENSE_KEY` is optional for Phase 2B trial work and must be treated as a secret if set.
 
 ## Do Not Commit
 
@@ -34,6 +37,8 @@ Do not commit:
 - local fixtures
 - generated thumbnails
 - generated outputs
+- PhotomatixCL binaries
+- PhotomatixCL installer archives
 - API keys
 - passwords
 - access tokens
@@ -43,5 +48,7 @@ Do not commit:
 - `.env` or `.env.*` files
 
 Generated JPEG thumbnails are stored under `LOCAL_STORAGE_ROOT` and served only through the admin-protected thumbnail endpoint. Do not expose thumbnail storage keys or local filesystem paths in public/API-key responses.
+
+PhotomatixCL command strings, stdout, and stderr must be redacted before they are returned, logged, or stored. Never print the raw `PHOTOMATIX_LICENSE_KEY`.
 
 Use placeholders, variable names, or 1Password references in docs and examples.

@@ -100,7 +100,7 @@ Admin session required. Accepts `multipart/form-data` with one or more `files` e
 
 Upload limits are enforced before storage or asset rows are written:
 
-- `MAX_UPLOAD_FILES`, default `9`
+- `MAX_UPLOAD_FILES`, default `30`
 - `MAX_UPLOAD_FILE_BYTES`, default `104857600`
 - `MAX_UPLOAD_BATCH_BYTES`, default `524288000`
 

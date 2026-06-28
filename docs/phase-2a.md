@@ -6,7 +6,7 @@ Phase 2A adds local upload, metadata extraction, bracket grouping, and review. I
 
 - `LocalVolumeStorage` stores uploaded originals under `LOCAL_STORAGE_ROOT`.
 - Admin and API-key upload endpoints accept multipart file batches.
-- Upload safety limits are env-backed: `MAX_UPLOAD_FILES` defaults to 9, `MAX_UPLOAD_FILE_BYTES` defaults to 100 MiB, and `MAX_UPLOAD_BATCH_BYTES` defaults to 500 MiB.
+- Upload safety limits are env-backed: `MAX_UPLOAD_FILES` defaults to 30, `MAX_UPLOAD_FILE_BYTES` defaults to 100 MiB, and `MAX_UPLOAD_BATCH_BYTES` defaults to 500 MiB.
 - JPEG metadata extraction reads capture time, camera model, lens model, dimensions, exposure time, aperture, ISO, exposure bias, and raw parser notes when present.
 - JPEG thumbnails are generated during upload and stored locally under `LOCAL_STORAGE_ROOT`.
 - RAW/TIFF extensions are accepted and stored with partial metadata notes.

@@ -32,11 +32,13 @@ Phase 2 should add the HDR pipeline without changing the structure-locked premis
 
 ## PhotomatixCL Worker
 
-- Not implemented in Phase 2A.
-- Add a worker service after the grouping and review contracts are stable.
-- Use `HdrEngine` as the integration seam.
+- Phase 2B adds a profiled Docker `hdr-worker` smoke service and `HdrEngine` implementations.
+- Keep normal app startup independent from the worker profile.
+- Use `FakeHdrEngine` for deterministic tests.
+- Use `PhotomatixCliEngine` for the future real PhotomatixCL call path.
 - Store redacted command text in `hdr_jobs.command_redacted`.
 - Do not log license keys or raw secrets.
+- Do not create app-level HDR jobs until Phase 2C.
 
 ## Exports
 

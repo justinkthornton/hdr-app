@@ -144,6 +144,7 @@ textarea {
 }
 
 .grid {
+  align-items: start;
   display: grid;
   gap: 18px;
   grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
@@ -183,6 +184,7 @@ textarea {
 }
 
 .form-grid {
+  align-content: start;
   display: grid;
   gap: 12px;
 }

@@ -166,10 +166,17 @@ function uploadSummaryLines(summary: UploadGroupSummary): string[] {
   return lines;
 }
 
-function uploadErrorMessage(error: string | undefined): string {
-  switch (error) {
+type UploadErrorBody = {
+  error?: string;
+  maxFiles?: number;
+};
+
+function uploadErrorMessage(body: UploadErrorBody): string {
+  switch (body.error) {
     case "too_many_files":
-      return "Too many files selected for one upload. Split the batch and try again.";
+      return body.maxFiles
+        ? `Too many files selected. This local review mode accepts up to ${body.maxFiles} files per upload.`
+        : "Too many files selected for one upload. Split the batch and try again.";
     case "file_too_large":
       return "One file is larger than the local upload limit.";
     case "batch_too_large":
@@ -190,12 +197,15 @@ function AssetPreview({
   asset: AssetDetail;
   compact?: boolean;
 }): React.ReactElement {
-  if (asset.thumbnailUrl) {
+  const [previewUnavailable, setPreviewUnavailable] = useState(false);
+
+  if (asset.thumbnailUrl && !previewUnavailable) {
     return (
       // eslint-disable-next-line @next/next/no-img-element -- Protected admin thumbnails rely on the browser's session cookie.
       <img
         alt={`Preview of ${asset.originalFilename}`}
         className={compact ? "asset-thumb compact-thumb" : "asset-thumb"}
+        onError={() => setPreviewUnavailable(true)}
         src={asset.thumbnailUrl}
       />
     );
@@ -293,8 +303,8 @@ export default function ShootDetailClient({ shootId }: { shootId: string }): Rea
     }
 
     if (!response.ok) {
-      const body = (await response.json().catch(() => ({}))) as { error?: string };
-      setUploadStatus(uploadErrorMessage(body.error));
+      const body = (await response.json().catch(() => ({}))) as UploadErrorBody;
+      setUploadStatus(uploadErrorMessage(body));
       return;
     }
 
@@ -409,6 +419,9 @@ export default function ShootDetailClient({ shootId }: { shootId: string }): Rea
             JPEG files get local thumbnails. RAW/TIFF files are stored with file-type placeholders
             for now.
           </p>
+          <p className="muted">
+            Local uploads allow 30 files by default, enough for three 7-shot brackets.
+          </p>
           <p className="muted">Accepted: JPG, JPEG, TIF, TIFF, CR3, CR2, DNG, ARW, NEF, RAF.</p>
           {uploadStatus ? <p>{uploadStatus}</p> : null}
           {uploadSummary ? (
@@ -516,6 +529,11 @@ export default function ShootDetailClient({ shootId }: { shootId: string }): Rea
             <h2>Step 2 and 3: Review detected groups</h2>
             {bracketGroups.some((group) => group.status === "pending_review") ? (
               <p className="muted">Review detected groups below.</p>
+            ) : null}
+            {bracketGroups.length > 0 ? (
+              <p className="muted">
+                Approve/reject marks review status only. HDR processing starts in a later phase.
+              </p>
             ) : null}
             {bracketGroups.length > 0 &&
             bracketGroups.every((group) => group.status === "approved") ? (

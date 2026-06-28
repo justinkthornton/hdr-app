@@ -6,6 +6,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "lint": "eslint .",
+    "smoke:fake": "tsx src/smoke.ts fake",
+    "smoke:photomatix": "tsx src/smoke.ts photomatix",
     "test": "vitest run packages/worker"
   },
   "dependencies": {

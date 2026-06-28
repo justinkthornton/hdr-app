@@ -14,7 +14,9 @@
     "format:write": "prettier --write .",
     "db:migrate": "node scripts/run-with-local-env.mjs pnpm --filter @structure-locked-hdr/core db:migrate",
     "db:reset": "node scripts/run-with-local-env.mjs pnpm --filter @structure-locked-hdr/core db:reset",
-    "smoke:phase1": "node scripts/run-with-local-env.mjs node scripts/smoke-phase-1.mjs"
+    "smoke:phase1": "node scripts/run-with-local-env.mjs node scripts/smoke-phase-1.mjs",
+    "worker:smoke:fake": "node scripts/run-with-local-env.mjs pnpm --filter @structure-locked-hdr/worker smoke:fake",
+    "worker:smoke:photomatix": "node scripts/run-with-local-env.mjs pnpm --filter @structure-locked-hdr/worker smoke:photomatix"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

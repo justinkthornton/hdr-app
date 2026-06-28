@@ -1,4 +1,5 @@
 node_modules/
+.pnpm-store/
 .next/
 dist/
 coverage/
@@ -12,3 +13,7 @@ Dockerfile.local
 /storage/
 fixtures/phase-2a/local/
 local-fixtures/
+local-photomatixcl/
+photomatixcl-cache/
+photomatixcl-output/
+local-outputs/

@@ -1,13 +1,13 @@
 # Structure-Locked HDR Service
 
-Internal real estate HDR processing service foundation. Phase 2A adds local batch upload, JPEG metadata extraction, JPEG thumbnails, EXIF/exposure-aware bracket grouping, and review/approval UI. PhotomatixCL processing, worker execution, reruns, and exports are still intentionally deferred.
+Internal real estate HDR processing service foundation. Phase 2A adds local batch upload, JPEG metadata extraction, JPEG thumbnails, EXIF/exposure-aware bracket grouping, and review/approval UI. Phase 2B adds the safe HDR engine seam and worker smoke path for PhotomatixCL validation. Full HDR jobs, reruns, and exports are still intentionally deferred.
 
 ## Stack
 
 - pnpm workspace for a small TypeScript monorepo.
 - Next.js, React, and TypeScript in `apps/web`.
 - Shared contracts, validation, auth helpers, database helpers, local storage, metadata extraction, JPEG thumbnail generation, bracket grouping, and future adapter seams in `packages/core`.
-- Placeholder worker package in `packages/worker`.
+- Worker smoke package in `packages/worker`.
 - Postgres via `pg`.
 - SQL migration files in `db/migrations`.
 - Docker Compose for local web and Postgres runtime.
@@ -37,13 +37,15 @@ ADMIN_SESSION_SECRET=replace-with-a-random-session-secret-32-chars-min
 API_KEY=replace-with-api-key
 STORAGE_DRIVER=local
 LOCAL_STORAGE_ROOT=/data/storage
-MAX_UPLOAD_FILES=9
+MAX_UPLOAD_FILES=30
 MAX_UPLOAD_FILE_BYTES=104857600
 MAX_UPLOAD_BATCH_BYTES=524288000
+HDR_ENGINE_MODE=fake
+PHOTOMATIXCL_PATH=
 PHOTOMATIX_LICENSE_KEY=
 ```
 
-`ADMIN_PASSWORD` is only for login validation. `ADMIN_SESSION_SECRET` signs the admin session cookie and must be a separate secret. `MAX_UPLOAD_FILES` defaults to 9, `MAX_UPLOAD_FILE_BYTES` defaults to 100 MiB, and `MAX_UPLOAD_BATCH_BYTES` defaults to 500 MiB for local-use upload safety. `PHOTOMATIX_LICENSE_KEY` is reserved for later PhotomatixCL work and is not used by Phase 2A code.
+`ADMIN_PASSWORD` is only for login validation. `ADMIN_SESSION_SECRET` signs the admin session cookie and must be a separate secret. `MAX_UPLOAD_FILES` defaults to 30, `MAX_UPLOAD_FILE_BYTES` defaults to 100 MiB, and `MAX_UPLOAD_BATCH_BYTES` defaults to 500 MiB for local-use upload safety. `HDR_ENGINE_MODE` defaults to `fake`. `PHOTOMATIXCL_PATH` is only needed for real PhotomatixCL smoke runs. `PHOTOMATIX_LICENSE_KEY` may be empty for trial mode and must never be logged.
 
 ## Docker Compose
 
@@ -58,12 +60,19 @@ The Compose file defines:
 - `web`: Next.js development service.
 - `migrate`: one-shot SQL migration service that runs after Postgres is healthy and before `web` starts.
 - `postgres`: Postgres service.
+- `hdr-worker`: Phase 2B worker smoke service behind the `worker` profile.
 - `postgres_data`: named Postgres volume.
 - `local_storage`: named placeholder volume for Phase 2 file storage.
 
 The stack is configured for Apple Silicon with `linux/arm64` images.
 
 `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, and `API_KEY` are required by Compose. The stack should fail to start if any of them are missing.
+
+Run the fake worker smoke in Docker without changing normal app startup:
+
+```bash
+docker compose --profile worker run --rm hdr-worker pnpm worker:smoke:fake
+```
 
 ## Database
 
@@ -118,6 +127,7 @@ pnpm build
 pnpm format
 pnpm db:migrate
 pnpm smoke:phase1
+pnpm worker:smoke:fake
 ```
 
 ## Phase 2A Scope
@@ -150,6 +160,24 @@ Not included:
 - Manual drag-and-drop sorting.
 - Better Auth, OAuth, true MCP server, or runtime AI calls.
 
+## Phase 2B Scope
+
+Included:
+
+- `FakeHdrEngine` for deterministic worker smoke tests.
+- `PhotomatixCliEngine` with redacted command, stdout, stderr, timeout, and license-loading behavior.
+- `pnpm worker:smoke:fake` and `pnpm worker:smoke:photomatix`.
+- Profiled `hdr-worker` Docker Compose service for Apple Silicon Linux ARM worker validation.
+- Optional/manual PhotomatixCL setup docs and local fixture policy.
+
+Not included:
+
+- automatic HDR jobs from approved groups
+- export records or download UI
+- reruns
+- full queue orchestration
+- committed PhotomatixCL binaries, real photos, generated outputs, or license keys
+
 ## Phase 2 Preview
 
-Later Phase 2 work will add PhotomatixCL jobs, MLS/full JPEG exports, optional TIFF export, reruns, worker processing, and broader RAW fixture validation.
+Later Phase 2 work will add PhotomatixCL-backed HDR jobs, MLS/full JPEG exports, optional TIFF export, reruns, job queue orchestration, and broader RAW fixture validation.

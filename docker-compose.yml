@@ -13,9 +13,11 @@ services:
       API_KEY: ${API_KEY:?API_KEY is required}
       STORAGE_DRIVER: local
       LOCAL_STORAGE_ROOT: /data/storage
-      MAX_UPLOAD_FILES: ${MAX_UPLOAD_FILES:-9}
+      MAX_UPLOAD_FILES: ${MAX_UPLOAD_FILES:-30}
       MAX_UPLOAD_FILE_BYTES: ${MAX_UPLOAD_FILE_BYTES:-104857600}
       MAX_UPLOAD_BATCH_BYTES: ${MAX_UPLOAD_BATCH_BYTES:-524288000}
+      HDR_ENGINE_MODE: ${HDR_ENGINE_MODE:-fake}
+      PHOTOMATIXCL_PATH: ${PHOTOMATIXCL_PATH:-}
       PHOTOMATIX_LICENSE_KEY: ${PHOTOMATIX_LICENSE_KEY:-}
     volumes:
       - local_storage:/data/storage
@@ -36,9 +38,11 @@ services:
       API_KEY: ${API_KEY:?API_KEY is required}
       STORAGE_DRIVER: local
       LOCAL_STORAGE_ROOT: /data/storage
-      MAX_UPLOAD_FILES: ${MAX_UPLOAD_FILES:-9}
+      MAX_UPLOAD_FILES: ${MAX_UPLOAD_FILES:-30}
       MAX_UPLOAD_FILE_BYTES: ${MAX_UPLOAD_FILE_BYTES:-104857600}
       MAX_UPLOAD_BATCH_BYTES: ${MAX_UPLOAD_BATCH_BYTES:-524288000}
+      HDR_ENGINE_MODE: ${HDR_ENGINE_MODE:-fake}
+      PHOTOMATIXCL_PATH: ${PHOTOMATIXCL_PATH:-}
       PHOTOMATIX_LICENSE_KEY: ${PHOTOMATIX_LICENSE_KEY:-}
     depends_on:
       postgres:
@@ -60,6 +64,31 @@ services:
       interval: 5s
       timeout: 5s
       retries: 12
+
+  hdr-worker:
+    profiles:
+      - worker
+    build:
+      context: .
+      dockerfile: docker/worker.Dockerfile
+    platform: linux/arm64
+    command: ["pnpm", "worker:smoke:fake"]
+    environment:
+      DATABASE_URL: postgres://hdr:hdr@postgres:5432/structure_locked_hdr
+      STORAGE_DRIVER: local
+      LOCAL_STORAGE_ROOT: /data/storage
+      HDR_ENGINE_MODE: ${HDR_ENGINE_MODE:-fake}
+      PHOTOMATIXCL_PATH: ${PHOTOMATIXCL_PATH:-}
+      PHOTOMATIX_LICENSE_KEY: ${PHOTOMATIX_LICENSE_KEY:-}
+      PHOTOMATIX_SMOKE_FIXTURE_DIR: /app/local-fixtures/phase-2b/photomatix-smoke/3-shot-jpeg
+      PHOTOMATIX_SMOKE_OUTPUT_DIR: /data/storage/phase-2b-photomatix-smoke
+    volumes:
+      - local_storage:/data/storage
+      - ./local-fixtures:/app/local-fixtures:ro
+      - ./local-photomatixcl:/opt/photomatixcl-local:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
 
 volumes:
   postgres_data:

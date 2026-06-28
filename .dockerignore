@@ -11,3 +11,8 @@ node_modules
 !.env.example
 *.log
 .DS_Store
+local-fixtures
+local-photomatixcl
+photomatixcl-cache
+photomatixcl-output
+local-outputs
