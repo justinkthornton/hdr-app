@@ -1,12 +1,12 @@
 # Structure-Locked HDR Service
 
-Internal real estate HDR processing service foundation. Phase 2A adds local batch upload, JPEG metadata extraction, JPEG thumbnails, EXIF/exposure-aware bracket grouping, and review/approval UI. Phase 2B adds the safe HDR engine seam and worker smoke path for PhotomatixCL validation. Full HDR jobs, reruns, and exports are still intentionally deferred.
+Internal real estate HDR processing service foundation. Phase 2A adds local batch upload, JPEG metadata extraction, JPEG thumbnails, EXIF/exposure-aware bracket grouping, and review/approval UI. Phase 2B adds the safe HDR engine seam and worker smoke path for PhotomatixCL validation. Phase 2C wires approved bracket groups into local HDR jobs, runs the fake engine, and creates downloadable placeholder export records. Real PhotomatixCL renders, reruns, and queues are still intentionally deferred.
 
 ## Stack
 
 - pnpm workspace for a small TypeScript monorepo.
 - Next.js, React, and TypeScript in `apps/web`.
-- Shared contracts, validation, auth helpers, database helpers, local storage, metadata extraction, JPEG thumbnail generation, bracket grouping, and future adapter seams in `packages/core`.
+- Shared contracts, validation, auth helpers, database helpers, local storage, metadata extraction, JPEG thumbnail generation, bracket grouping, job/export repositories, and adapter seams in `packages/core`.
 - Worker smoke package in `packages/worker`.
 - Postgres via `pg`.
 - SQL migration files in `db/migrations`.
@@ -62,7 +62,7 @@ The Compose file defines:
 - `postgres`: Postgres service.
 - `hdr-worker`: Phase 2B worker smoke service behind the `worker` profile.
 - `postgres_data`: named Postgres volume.
-- `local_storage`: named placeholder volume for Phase 2 file storage.
+- `local_storage`: named volume for uploaded originals, thumbnails, staged files, and fake export placeholders.
 
 The stack is configured for Apple Silicon with `linux/arm64` images.
 
@@ -130,6 +130,8 @@ pnpm smoke:phase1
 pnpm worker:smoke:fake
 ```
 
+Phase 2C local validation also uses the running app to approve a bracket group, click `Process approved group`, and download the generated fake placeholder exports.
+
 ## Phase 2A Scope
 
 Included:
@@ -178,6 +180,28 @@ Not included:
 - full queue orchestration
 - committed PhotomatixCL binaries, real photos, generated outputs, or license keys
 
+## Phase 2C Scope
+
+Included:
+
+- `hdr_jobs.engine_mode` migration plus job/export repository helpers.
+- Admin endpoints for listing, creating, processing, and downloading HDR jobs/exports.
+- `/api/v1` API-key equivalents for Hermes-style REST access.
+- Approved-group-only job creation.
+- Process-now fake engine path for local MVP validation.
+- Stored fake export text files with explicit placeholder wording.
+- Safe API responses that omit storage keys, local filesystem roots, raw secrets, and generated output paths.
+- Shoot detail UI controls for fake HDR processing and export downloads.
+
+Not included:
+
+- full background queue orchestration
+- reruns
+- production object storage
+- Better Auth, OAuth, true MCP, runtime AI, commercial billing, or deployment
+- real PhotomatixCL acceptance
+- committed real photos, generated HDR outputs, Photomatix binaries, or license keys
+
 ## Phase 2 Preview
 
-Later Phase 2 work will add PhotomatixCL-backed HDR jobs, MLS/full JPEG exports, optional TIFF export, reruns, job queue orchestration, and broader RAW fixture validation.
+Later Phase 2 work will add real PhotomatixCL-backed outputs, reruns, job queue orchestration, and broader RAW fixture validation.

@@ -284,7 +284,7 @@ textarea {
 .workflow-panel {
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   margin-bottom: 18px;
 }
 
@@ -342,7 +342,8 @@ textarea {
 
 .asset-meta,
 .group-header,
-.review-actions {
+.review-actions,
+.hdr-job-card-header {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
@@ -507,12 +508,105 @@ textarea {
   width: 24px;
 }
 
+.hdr-job-panel {
+  background: #ffffff;
+  border: 1px solid #cddfd8;
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+
+.hdr-job-controls {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(160px, 1fr) repeat(3, auto) auto;
+}
+
+.preset-field {
+  color: var(--muted);
+  display: grid;
+  font-size: 13px;
+  font-weight: 700;
+  gap: 6px;
+}
+
+.checkbox-row {
+  align-items: center;
+  color: #33434d;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 700;
+  gap: 7px;
+  min-height: 40px;
+  white-space: nowrap;
+}
+
+.checkbox-row input {
+  min-height: auto;
+  width: auto;
+}
+
+.hdr-job-list {
+  display: grid;
+  gap: 10px;
+}
+
+.hdr-job-card {
+  background: #f7f9fa;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.hdr-job-card.status-succeeded {
+  border-color: #72a989;
+}
+
+.hdr-job-card.status-failed {
+  border-color: #d7aaa5;
+}
+
+.export-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.export-link {
+  min-height: 34px;
+}
+
+.diagnostics code {
+  background: #172026;
+  border-radius: 6px;
+  color: #f7f9fa;
+  display: block;
+  font-size: 12px;
+  line-height: 1.5;
+  margin-top: 8px;
+  overflow-x: auto;
+  padding: 10px;
+  white-space: pre-wrap;
+}
+
 @media (max-width: 780px) {
   .grid,
   .detail-grid,
-  .workflow-panel,
   .topbar {
     grid-template-columns: 1fr;
+  }
+
+  .hdr-job-controls {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .checkbox-row {
+    white-space: normal;
   }
 
   .asset-row {

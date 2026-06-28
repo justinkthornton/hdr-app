@@ -1,6 +1,6 @@
 # API
 
-Phase 2A implements health, shoot management, local batch uploads, asset metadata, bracket-group review, and API-key read/control endpoints. HDR jobs and exports are still planned.
+Phase 2C implements health, shoot management, local batch uploads, asset metadata, bracket-group review, fake HDR job processing, export records, downloads, and API-key read/control endpoints.
 
 ## Auth
 
@@ -188,6 +188,64 @@ Example:
 }
 ```
 
+### GET /api/shoots/:shootId/hdr-jobs
+
+Admin session required. Lists HDR jobs for a shoot, including safe export metadata and download URLs.
+
+### GET /api/bracket-groups/:groupId/hdr-jobs
+
+Admin session required. Lists HDR jobs for one bracket group.
+
+### POST /api/bracket-groups/:groupId/hdr-jobs
+
+Admin session required. Requires the bracket group to be `approved`.
+
+Body:
+
+```json
+{
+  "preset": "Natural",
+  "engineMode": "fake",
+  "outputMlsJpeg": true,
+  "outputFullJpeg": true,
+  "outputTiff": false
+}
+```
+
+Defaults:
+
+- `preset`: `Natural`
+- `engineMode`: `HDR_ENGINE_MODE`, default `fake`
+- `outputMlsJpeg`: `true`
+- `outputFullJpeg`: `true`
+- `outputTiff`: `false`
+
+If the group is not approved, the endpoint returns:
+
+```json
+{
+  "error": "bracket_group_not_approved"
+}
+```
+
+### GET /api/hdr-jobs/:jobId
+
+Admin session required. Returns one job and its safe export metadata.
+
+### POST /api/hdr-jobs/:jobId/process
+
+Admin session required. Processes the job immediately. In fake mode, this creates placeholder text exports through local storage. If Photomatix mode is requested without `PHOTOMATIXCL_PATH`, the job is marked `failed` with `photomatixcl_missing_or_not_executable`.
+
+### GET /api/hdr-jobs/:jobId/exports
+
+Admin session required. Lists safe export metadata for one job.
+
+### GET /api/exports/:exportId/download
+
+Admin session required. Downloads a generated export file. Phase 2C fake exports are text placeholders that clearly say they are not real HDR images.
+
+Job/export responses are safe to expose to the local UI and API clients. They include IDs, status, preset, output choices, sanitized `commandRedacted`, safe `errorMessage`, export kind, MIME type, file size, and download URLs. They do not expose internal `storageKey`, `LOCAL_STORAGE_ROOT`, raw local output paths, database URLs, API keys, passwords, license keys, or raw secret values.
+
 ### GET /api/v1/shoots
 
 Requires `x-api-key`. Same response shape as `GET /api/shoots`.
@@ -224,6 +282,34 @@ Requires `x-api-key`. Same group-level response shape as `POST /api/bracket-grou
 
 Requires `x-api-key`. Same group-level response shape as `POST /api/bracket-groups/:groupId/reject`, with nested assets using the sanitized `/api/v1` asset shape.
 
+### GET /api/v1/shoots/:shootId/hdr-jobs
+
+Requires `x-api-key`. Same safe job/export response shape as `GET /api/shoots/:shootId/hdr-jobs`, with `/api/v1` download URLs.
+
+### GET /api/v1/bracket-groups/:groupId/hdr-jobs
+
+Requires `x-api-key`. Same safe response shape as `GET /api/bracket-groups/:groupId/hdr-jobs`.
+
+### POST /api/v1/bracket-groups/:groupId/hdr-jobs
+
+Requires `x-api-key`. Same behavior as the admin job creation endpoint.
+
+### GET /api/v1/hdr-jobs/:jobId
+
+Requires `x-api-key`. Same safe response shape as `GET /api/hdr-jobs/:jobId`.
+
+### POST /api/v1/hdr-jobs/:jobId/process
+
+Requires `x-api-key`. Same process-now behavior as the admin endpoint.
+
+### GET /api/v1/hdr-jobs/:jobId/exports
+
+Requires `x-api-key`. Same safe response shape as the admin endpoint.
+
+### GET /api/v1/exports/:exportId/download
+
+Requires `x-api-key`. Downloads a generated export file.
+
 ## Error Shape
 
 ```json
@@ -236,7 +322,5 @@ Validation errors include an `issues` array from the shared schema.
 
 ## Planned Later Endpoints
 
-- `POST /api/hdr-jobs`
-- `GET /api/hdr-jobs/:hdrJobId`
 - `POST /api/hdr-jobs/:hdrJobId/rerun`
 - `GET /api/shoots/:shootId/exports`

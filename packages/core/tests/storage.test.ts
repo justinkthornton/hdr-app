@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  buildExportStorageKey,
   buildOriginalStorageKey,
   buildThumbnailStorageKey,
   LocalVolumeStorage,
@@ -24,6 +25,16 @@ describe("LocalVolumeStorage", () => {
         assetId: "asset-1"
       })
     ).toBe("shoots/shoot-1/uploads/batch-1/thumbnails/asset-1.jpg");
+  });
+
+  it("constructs export keys inside the job export folder", () => {
+    expect(
+      buildExportStorageKey({
+        shootId: "shoot-1",
+        jobId: "job-1",
+        filename: "../mls placeholder?.txt"
+      })
+    ).toBe("shoots/shoot-1/jobs/job-1/exports/mls-placeholder.txt");
   });
 
   it("prevents path traversal and supports put/get/delete", async () => {

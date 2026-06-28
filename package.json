@@ -2,7 +2,7 @@
   "name": "structure-locked-hdr-service",
   "version": "0.1.0",
   "private": true,
-  "description": "Phase 1 foundation for an internal structure-locked HDR processing service.",
+  "description": "Local structure-locked HDR processing service with fake Phase 2C job/export workflow.",
   "packageManager": "pnpm@11.7.0",
   "type": "module",
   "scripts": {

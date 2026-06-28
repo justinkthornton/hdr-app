@@ -81,6 +81,20 @@ export function buildThumbnailStorageKey(input: {
   );
 }
 
+export function buildExportStorageKey(input: {
+  shootId: string;
+  jobId: string;
+  filename: string;
+}): string {
+  const shootId = assertSafeStorageSegment(input.shootId, "shootId");
+  const jobId = assertSafeStorageSegment(input.jobId, "jobId");
+  const safeFilename = sanitizeFilename(input.filename);
+
+  return assertSafeStorageKey(
+    ["shoots", shootId, "jobs", jobId, "exports", safeFilename].join("/")
+  );
+}
+
 async function bodyToBuffer(body: ReadableStream<Uint8Array> | Buffer): Promise<Buffer> {
   if (Buffer.isBuffer(body)) {
     return body;

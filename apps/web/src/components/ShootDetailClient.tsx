@@ -55,7 +55,45 @@ type BracketGroupDetail = {
   assets: (AssetDetail & { sortOrder: number })[];
 };
 
+type HdrExportDetail = {
+  id: string;
+  kind: "mls_jpeg" | "full_jpeg" | "tiff";
+  mimeType: string;
+  fileSizeBytes: number | null;
+  createdAt: string;
+  downloadUrl: string;
+};
+
+type HdrJobDetail = {
+  id: string;
+  bracketGroupId: string;
+  status: "queued" | "running" | "succeeded" | "failed" | "canceled";
+  engineMode: "fake" | "photomatix";
+  preset: string;
+  outputMlsJpeg: boolean;
+  outputFullJpeg: boolean;
+  outputTiff: boolean;
+  startedAt: string | null;
+  finishedAt: string | null;
+  errorMessage: string | null;
+  commandRedacted: string | null;
+  exports: HdrExportDetail[];
+};
+
+type HdrJobOptions = {
+  preset: string;
+  outputMlsJpeg: boolean;
+  outputFullJpeg: boolean;
+  outputTiff: boolean;
+};
+
 const acceptedFileTypes = ".jpg,.jpeg,.tif,.tiff,.cr3,.cr2,.dng,.arw,.nef,.raf";
+const defaultHdrJobOptions: HdrJobOptions = {
+  preset: "Natural",
+  outputMlsJpeg: true,
+  outputFullJpeg: true,
+  outputTiff: false
+};
 
 function formatDate(value: string | null): string {
   if (!value) {
@@ -97,6 +135,42 @@ function statusLabel(status: BracketGroupDetail["status"]): string {
     case "pending_review":
       return "Pending review";
   }
+}
+
+function jobStatusLabel(status: HdrJobDetail["status"]): string {
+  switch (status) {
+    case "queued":
+      return "Queued";
+    case "running":
+      return "Running";
+    case "succeeded":
+      return "Succeeded";
+    case "failed":
+      return "Failed";
+    case "canceled":
+      return "Canceled";
+  }
+}
+
+function exportKindLabel(kind: HdrExportDetail["kind"]): string {
+  switch (kind) {
+    case "mls_jpeg":
+      return "MLS placeholder";
+    case "full_jpeg":
+      return "Full placeholder";
+    case "tiff":
+      return "TIFF placeholder";
+  }
+}
+
+function requestedOutputs(job: HdrJobDetail): string {
+  return [
+    job.outputMlsJpeg ? "MLS JPEG" : null,
+    job.outputFullJpeg ? "Full JPEG" : null,
+    job.outputTiff ? "TIFF" : null
+  ]
+    .filter(Boolean)
+    .join(", ");
 }
 
 function groupTitle(group: BracketGroupDetail): string {
@@ -222,6 +296,8 @@ export default function ShootDetailClient({ shootId }: { shootId: string }): Rea
   const [shoot, setShoot] = useState<ShootDetail | null>(null);
   const [assets, setAssets] = useState<AssetDetail[]>([]);
   const [bracketGroups, setBracketGroups] = useState<BracketGroupDetail[]>([]);
+  const [hdrJobs, setHdrJobs] = useState<HdrJobDetail[]>([]);
+  const [hdrJobOptions, setHdrJobOptions] = useState<Record<string, HdrJobOptions>>({});
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
@@ -229,6 +305,8 @@ export default function ShootDetailClient({ shootId }: { shootId: string }): Rea
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [reviewingGroupId, setReviewingGroupId] = useState<string | null>(null);
+  const [processingGroupId, setProcessingGroupId] = useState<string | null>(null);
+  const [processingStatus, setProcessingStatus] = useState<string | null>(null);
 
   const selectedFileSummary = useMemo(() => {
     if (selectedFiles.length === 0) {
@@ -242,20 +320,23 @@ export default function ShootDetailClient({ shootId }: { shootId: string }): Rea
   async function loadShoot(): Promise<void> {
     setIsLoading(true);
     setError(null);
-    const [shootResponse, assetsResponse, groupsResponse] = await Promise.all([
+    const [shootResponse, assetsResponse, groupsResponse, hdrJobsResponse] = await Promise.all([
       fetch(`/api/shoots/${shootId}`),
       fetch(`/api/shoots/${shootId}/assets`),
-      fetch(`/api/shoots/${shootId}/bracket-groups`)
+      fetch(`/api/shoots/${shootId}/bracket-groups`),
+      fetch(`/api/shoots/${shootId}/hdr-jobs`)
     ]);
 
     if (
-      [shootResponse, assetsResponse, groupsResponse].some((response) => response.status === 401)
+      [shootResponse, assetsResponse, groupsResponse, hdrJobsResponse].some(
+        (response) => response.status === 401
+      )
     ) {
       window.location.assign("/login");
       return;
     }
 
-    if (!shootResponse.ok || !assetsResponse.ok || !groupsResponse.ok) {
+    if (!shootResponse.ok || !assetsResponse.ok || !groupsResponse.ok || !hdrJobsResponse.ok) {
       setError("Shoot detail could not be loaded.");
       setIsLoading(false);
       return;
@@ -264,9 +345,11 @@ export default function ShootDetailClient({ shootId }: { shootId: string }): Rea
     const shootBody = (await shootResponse.json()) as { shoot: ShootDetail };
     const assetsBody = (await assetsResponse.json()) as { assets: AssetDetail[] };
     const groupsBody = (await groupsResponse.json()) as { bracketGroups: BracketGroupDetail[] };
+    const hdrJobsBody = (await hdrJobsResponse.json()) as { hdrJobs: HdrJobDetail[] };
     setShoot(shootBody.shoot);
     setAssets(assetsBody.assets);
     setBracketGroups(groupsBody.bracketGroups);
+    setHdrJobs(hdrJobsBody.hdrJobs);
     setIsLoading(false);
   }
 
@@ -339,12 +422,190 @@ export default function ShootDetailClient({ shootId }: { shootId: string }): Rea
     await loadShoot();
   }
 
+  function hdrOptionsForGroup(groupId: string): HdrJobOptions {
+    return hdrJobOptions[groupId] ?? defaultHdrJobOptions;
+  }
+
+  function updateHdrOption<K extends keyof HdrJobOptions>(
+    groupId: string,
+    key: K,
+    value: HdrJobOptions[K]
+  ): void {
+    setHdrJobOptions((current) => ({
+      ...current,
+      [groupId]: {
+        ...(current[groupId] ?? defaultHdrJobOptions),
+        [key]: value
+      }
+    }));
+  }
+
+  async function processApprovedGroup(groupId: string): Promise<void> {
+    const options = hdrOptionsForGroup(groupId);
+
+    if (!options.outputMlsJpeg && !options.outputFullJpeg && !options.outputTiff) {
+      setProcessingStatus("Select at least one export before processing.");
+      return;
+    }
+
+    setProcessingGroupId(groupId);
+    setProcessingStatus("Creating HDR job...");
+    setError(null);
+
+    const createResponse = await fetch(`/api/bracket-groups/${groupId}/hdr-jobs`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        ...options,
+        engineMode: "fake"
+      })
+    });
+
+    if (createResponse.status === 401) {
+      window.location.assign("/login");
+      return;
+    }
+
+    if (!createResponse.ok) {
+      setProcessingGroupId(null);
+      setProcessingStatus("HDR job could not be created for this group.");
+      return;
+    }
+
+    const createBody = (await createResponse.json()) as { hdrJob: HdrJobDetail };
+    setProcessingStatus("Running fake HDR engine...");
+    const processResponse = await fetch(`/api/hdr-jobs/${createBody.hdrJob.id}/process`, {
+      method: "POST"
+    });
+
+    if (processResponse.status === 401) {
+      window.location.assign("/login");
+      return;
+    }
+
+    setProcessingGroupId(null);
+
+    if (!processResponse.ok) {
+      setProcessingStatus("HDR job did not finish.");
+      await loadShoot();
+      return;
+    }
+
+    setProcessingStatus("HDR job finished. Exports are ready below.");
+    await loadShoot();
+  }
+
+  function renderHdrPanel(group: BracketGroupDetail): React.ReactElement | null {
+    if (group.status !== "approved") {
+      return null;
+    }
+
+    const groupJobs = hdrJobs.filter((job) => job.bracketGroupId === group.id);
+    const options = hdrOptionsForGroup(group.id);
+    const canProcess = options.outputMlsJpeg || options.outputFullJpeg || options.outputTiff;
+
+    return (
+      <div className="hdr-job-panel">
+        <div className="hdr-job-controls">
+          <label className="preset-field" htmlFor={`preset-${group.id}`}>
+            Preset
+            <input
+              id={`preset-${group.id}`}
+              value={options.preset}
+              onChange={(event) => updateHdrOption(group.id, "preset", event.target.value)}
+            />
+          </label>
+          <label className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={options.outputMlsJpeg}
+              onChange={(event) => updateHdrOption(group.id, "outputMlsJpeg", event.target.checked)}
+            />
+            MLS placeholder
+          </label>
+          <label className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={options.outputFullJpeg}
+              onChange={(event) =>
+                updateHdrOption(group.id, "outputFullJpeg", event.target.checked)
+              }
+            />
+            Full placeholder
+          </label>
+          <label className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={options.outputTiff}
+              onChange={(event) => updateHdrOption(group.id, "outputTiff", event.target.checked)}
+            />
+            TIFF placeholder
+          </label>
+          <button
+            type="button"
+            disabled={!canProcess || processingGroupId === group.id}
+            onClick={() => void processApprovedGroup(group.id)}
+          >
+            {processingGroupId === group.id ? "Processing..." : "Process approved group"}
+          </button>
+        </div>
+        {groupJobs.length === 0 ? (
+          <p className="muted">No HDR jobs for this group yet.</p>
+        ) : (
+          <div className="hdr-job-list">
+            {groupJobs.map((job) => (
+              <article className={`hdr-job-card status-${job.status}`} key={job.id}>
+                <div className="hdr-job-card-header">
+                  <div>
+                    <strong>{jobStatusLabel(job.status)}</strong>
+                    <p className="muted">
+                      {job.engineMode === "fake" ? "Fake engine" : "PhotomatixCL"} | {job.preset} |{" "}
+                      {requestedOutputs(job)}
+                    </p>
+                  </div>
+                  <span className="status-pill">{jobStatusLabel(job.status)}</span>
+                </div>
+                {job.errorMessage ? <p className="error">Error: {job.errorMessage}</p> : null}
+                {job.exports.length > 0 ? (
+                  <div className="export-list">
+                    {job.exports.map((hdrExport) => (
+                      <a
+                        className="button-link export-link"
+                        href={hdrExport.downloadUrl}
+                        key={hdrExport.id}
+                      >
+                        {exportKindLabel(hdrExport.kind)}
+                        {hdrExport.fileSizeBytes
+                          ? ` (${formatBytes(hdrExport.fileSizeBytes)})`
+                          : ""}
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="muted">Exports appear here after processing.</p>
+                )}
+                {job.commandRedacted ? (
+                  <details className="diagnostics">
+                    <summary>Command receipt</summary>
+                    <code>{job.commandRedacted}</code>
+                  </details>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <>
       <header className="topbar">
         <div className="brand">
           <h1>{shoot?.name ?? "Shoot detail"}</h1>
-          <p>Phase 2A upload and bracket review</p>
+          <p>Phase 2C upload, bracket review, and fake HDR exports</p>
         </div>
         <Link href="/dashboard">
           <button className="secondary" type="button">
@@ -388,9 +649,13 @@ export default function ShootDetailClient({ shootId }: { shootId: string }): Rea
               <span>Step 3</span>
               <strong>Approve groups</strong>
             </div>
-            <div className="workflow-step future">
+            <div className="workflow-step active">
               <span>Step 4</span>
-              <strong>HDR processing coming in next phase</strong>
+              <strong>Process approved groups</strong>
+            </div>
+            <div className="workflow-step active">
+              <span>Step 5</span>
+              <strong>Download exports</strong>
             </div>
           </section>
         </>
@@ -532,15 +797,14 @@ export default function ShootDetailClient({ shootId }: { shootId: string }): Rea
             ) : null}
             {bracketGroups.length > 0 ? (
               <p className="muted">
-                Approve/reject marks review status only. HDR processing starts in a later phase.
+                Approved groups can now run through the fake HDR engine and create download files.
               </p>
             ) : null}
             {bracketGroups.length > 0 &&
             bracketGroups.every((group) => group.status === "approved") ? (
-              <p className="muted">
-                Approved groups are ready for HDR processing in the next phase.
-              </p>
+              <p className="muted">Approved groups are ready for local fake HDR processing.</p>
             ) : null}
+            {processingStatus ? <p className="muted">{processingStatus}</p> : null}
           </div>
         </div>
         {bracketGroups.length === 0 && assets.length === 0 ? (
@@ -608,6 +872,7 @@ export default function ShootDetailClient({ shootId }: { shootId: string }): Rea
                   Reject group
                 </button>
               </div>
+              {renderHdrPanel(group)}
             </article>
           ))}
         </div>
