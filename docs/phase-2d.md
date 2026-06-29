@@ -18,6 +18,7 @@ Phase 2D prepares and validates the real PhotomatixCL smoke path without making 
   - Photomatix binary path
   - fixture and output directories
 - `PhotomatixCliEngine.checkLicense()` so license loading can be reported as its own redacted stage.
+- Automatic `-trial` render mode when no `PHOTOMATIX_LICENSE_KEY` is configured.
 - App job-runner test seam for simulated Photomatix output imports without requiring a real binary in automated tests.
 - Shoot detail UI engine choice with fake mode as the default and PhotomatixCL as opt-in.
 - Honest job/export labels:
@@ -31,25 +32,34 @@ Phase 2D prepares and validates the real PhotomatixCL smoke path without making 
 
 ## Manual Setup
 
-Preferred local binary path on the host:
+Preferred local extracted folder on the host:
 
 ```text
-local-photomatixcl/PhotomatixCL
+local-photomatixcl/PhotomatixCL/
 ```
 
 Expected path inside the worker container:
 
 ```text
-/opt/photomatixcl-local/PhotomatixCL
+/opt/photomatixcl-local/PhotomatixCL/PhotomatixCL
 ```
 
 Set:
 
 ```bash
-PHOTOMATIXCL_PATH=/opt/photomatixcl-local/PhotomatixCL
+PHOTOMATIXCL_PATH=/opt/photomatixcl-local/PhotomatixCL/PhotomatixCL
 ```
 
 `local-photomatixcl/` is ignored by Git. Do not commit PhotomatixCL binaries or installer archives.
+
+The Docker worker image includes the runtime libraries discovered during manual trial validation:
+
+- `liblensfun1`
+- `libcurl3-gnutls`
+- `libgomp1`
+- `libjpeg62-turbo`
+- `libtiff6`
+- `liblcms2-2`
 
 ## Fixture Setup
 
@@ -96,6 +106,8 @@ docker compose --profile worker run --rm hdr-worker pnpm worker:smoke:photomatix
 
 If the binary or fixtures are absent, the smoke reports `blocked` and names the missing stage. It must not report false success.
 
+When no `PHOTOMATIX_LICENSE_KEY` is configured, render commands include `-trial`. Trial output is watermarked. The smoke uses a unique output base name by default and only reports `passed` after the expected output file exists.
+
 ## App-Level Photomatix Job
 
 After real smoke passes:
@@ -124,13 +136,18 @@ The UI explains that PhotomatixCL is not configured and suggests fake mode or se
 
 ## Current Local Validation Status
 
-As of the Phase 2D checkpoint, real Photomatix validation is blocked because:
+Manual real PhotomatixCL trial smoke succeeded in the Docker worker after installing the required runtime libraries and using `-trial`.
 
-- `PHOTOMATIXCL_PATH` is not set in the local env.
-- `local-photomatixcl/PhotomatixCL` is not present.
-- `local-fixtures/phase-2b/photomatix-smoke/3-shot-jpeg/` is not present.
+Observed manual result:
 
-`pnpm worker:smoke:photomatix` reports `blocked` at the `binary` stage with `photomatixcl_path_missing`. No PhotomatixCL binary, license key, real fixture photo, generated HDR output, or raw secret value was used or committed.
+- PhotomatixCL ran in trial mode without a license key.
+- PhotomatixCL warned that a watermark would be applied.
+- Alignment reached 100%.
+- Fusion used the `Natural` preset.
+- A real JPEG was saved under the worker storage volume at `phase-2b-photomatix-smoke/manual-trial-smoke.jpg`.
+- Output size was approximately 9.5 MB.
+
+The binary, fixture photos, and generated outputs remain local ignored artifacts and must not be committed.
 
 ## Next Step
 

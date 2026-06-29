@@ -251,7 +251,7 @@ describe("HDR job runner", () => {
     const result = await processHdrJob(currentJob.id, {
       storage,
       localStorageRoot,
-      photomatixclPath: "/opt/photomatixcl-local/PhotomatixCL",
+      photomatixclPath: "/opt/photomatixcl-local/PhotomatixCL/PhotomatixCL",
       photomatixCheckExecutable: async () => true,
       photomatixRunCommand: async (input) => {
         const outputStem = input.args[input.args.indexOf("-o") + 1]!;
@@ -314,6 +314,7 @@ describe("HDR job runner", () => {
     });
 
     expect(result?.hdrJob.status).toBe("succeeded");
+    expect(result?.hdrJob.commandRedacted).toContain("-trial");
     expect(result?.hdrJob.commandRedacted).toContain("[LOCAL_STORAGE_ROOT]");
     expect(result?.hdrJob.commandRedacted).toContain("[PHOTOMATIXCL_PATH]");
     expect(result?.exports).toHaveLength(2);
@@ -323,6 +324,8 @@ describe("HDR job runner", () => {
       "fake real photomatix jpeg"
     );
     expect(result?.hdrJob.commandRedacted).not.toContain(localStorageRoot);
-    expect(result?.hdrJob.commandRedacted).not.toContain("/opt/photomatixcl-local/PhotomatixCL");
+    expect(result?.hdrJob.commandRedacted).not.toContain(
+      "/opt/photomatixcl-local/PhotomatixCL/PhotomatixCL"
+    );
   });
 });

@@ -74,7 +74,9 @@ Run the fake worker smoke in Docker without changing normal app startup:
 docker compose --profile worker run --rm hdr-worker pnpm worker:smoke:fake
 ```
 
-Run the real Photomatix smoke only after mounting an ignored Linux ARM binary at `local-photomatixcl/PhotomatixCL` and setting `PHOTOMATIXCL_PATH=/opt/photomatixcl-local/PhotomatixCL`:
+The worker image includes the runtime libraries PhotomatixCL needed during local trial validation: `liblensfun1`, `libcurl3-gnutls`, `libgomp1`, `libjpeg62-turbo`, `libtiff6`, and `liblcms2-2`.
+
+Run the real Photomatix smoke only after mounting an ignored Linux ARM extraction at `local-photomatixcl/PhotomatixCL/` and setting `PHOTOMATIXCL_PATH=/opt/photomatixcl-local/PhotomatixCL/PhotomatixCL`:
 
 ```bash
 docker compose --profile worker run --rm hdr-worker pnpm worker:smoke:photomatix
@@ -214,6 +216,7 @@ Included:
 
 - staged Photomatix smoke receipts for binary, startup, license, fixture, and render checks.
 - redacted smoke output that avoids raw secrets, home paths, storage roots, fixture roots, and binary paths.
+- automatic Photomatix trial-mode rendering with `-trial` when no license key is configured.
 - opt-in PhotomatixCL choice in the local job UI.
 - Photomatix output import into existing export records when a real output file is produced.
 - tests that simulate Photomatix output without requiring the real binary.

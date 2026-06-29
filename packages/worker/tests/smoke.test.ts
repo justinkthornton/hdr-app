@@ -58,7 +58,7 @@ describe("worker smoke helpers", () => {
     const result = await runPhotomatixWorkerSmoke(
       {
         LOCAL_STORAGE_ROOT: "/tmp/hdr-storage",
-        PHOTOMATIXCL_PATH: "/opt/photomatixcl-local/PhotomatixCL",
+        PHOTOMATIXCL_PATH: "/opt/photomatixcl-local/PhotomatixCL/PhotomatixCL",
         PHOTOMATIX_SMOKE_FIXTURE_DIR: "/tmp/missing-fixtures"
       },
       {
@@ -99,9 +99,10 @@ describe("worker smoke helpers", () => {
       {
         HOME: root,
         LOCAL_STORAGE_ROOT: path.join(root, "storage"),
-        PHOTOMATIXCL_PATH: path.join(root, "local-photomatixcl", "PhotomatixCL"),
+        PHOTOMATIXCL_PATH: path.join(root, "local-photomatixcl", "PhotomatixCL", "PhotomatixCL"),
         PHOTOMATIX_SMOKE_FIXTURE_DIR: fixtureDirectory,
-        PHOTOMATIX_SMOKE_OUTPUT_DIR: outputDirectory
+        PHOTOMATIX_SMOKE_OUTPUT_DIR: outputDirectory,
+        PHOTOMATIX_SMOKE_OUTPUT_BASE_NAME: "custom-smoke"
       },
       {
         checkExecutable: async () => true,
@@ -139,7 +140,57 @@ describe("worker smoke helpers", () => {
       "fixture",
       "render"
     ]);
+    expect(result.engineResult?.commandRedacted).toContain("-trial");
+    expect(result.engineResult?.metadata.outputExists).toBe(true);
+    expect(result.outputPaths?.[0]).toContain("custom-smoke.jpg");
+    expect(resultJson).toContain("[PHOTOMATIX_SMOKE_FIXTURE_FILE]");
+    expect(resultJson).not.toContain("a.jpg");
     expect(result.outputPaths?.[0]).toContain("[LOCAL_STORAGE_ROOT]");
     expect(resultJson).not.toContain(root);
+  });
+
+  it("fails the render stage when PhotomatixCL exits successfully without an output file", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "photomatix-smoke-missing-output-"));
+    const fixtureDirectory = path.join(root, "fixtures");
+    const outputDirectory = path.join(root, "storage", "phase-2b-photomatix-smoke");
+
+    await mkdir(fixtureDirectory, {
+      recursive: true
+    });
+    await Promise.all([
+      writeFile(path.join(fixtureDirectory, "a.jpg"), "a"),
+      writeFile(path.join(fixtureDirectory, "b.jpg"), "b"),
+      writeFile(path.join(fixtureDirectory, "c.jpg"), "c")
+    ]);
+
+    const result = await runPhotomatixWorkerSmoke(
+      {
+        HOME: root,
+        LOCAL_STORAGE_ROOT: path.join(root, "storage"),
+        PHOTOMATIXCL_PATH: path.join(root, "local-photomatixcl", "PhotomatixCL", "PhotomatixCL"),
+        PHOTOMATIX_SMOKE_FIXTURE_DIR: fixtureDirectory,
+        PHOTOMATIX_SMOKE_OUTPUT_DIR: outputDirectory,
+        PHOTOMATIX_SMOKE_OUTPUT_BASE_NAME: "missing-output-smoke"
+      },
+      {
+        checkExecutable: async () => true,
+        runCommand: async () => ({
+          exitCode: 0,
+          timedOut: false,
+          stdout: "render reported success without writing a file",
+          stderr: ""
+        })
+      }
+    );
+
+    const renderStage = result.stages?.find((stage) => stage.name === "render");
+
+    expect(result.status).toBe("failed");
+    expect(renderStage).toMatchObject({
+      status: "failed",
+      error: "photomatix_output_missing"
+    });
+    expect(result.engineResult?.metadata.outputExists).toBe(false);
+    expect(result.engineResult?.commandRedacted).toContain("-trial");
   });
 });

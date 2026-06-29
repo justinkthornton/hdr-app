@@ -21,9 +21,19 @@ The project provides:
 - `PHOTOMATIXCL_PATH`, pointing to the binary inside the worker container.
 - `HDR_ENGINE_MODE`, defaulting to `fake`.
 - staged smoke reporting for binary, startup, license, fixture, and render checks.
+- automatic `-trial` render mode when no license key is configured.
 - opt-in app job processing with `engineMode: "photomatix"`.
 
 The normal app stack does not require PhotomatixCL.
+
+The worker image installs the runtime packages needed by the validated local trial binary:
+
+- `liblensfun1`
+- `libcurl3-gnutls`
+- `libgomp1`
+- `libjpeg62-turbo`
+- `libtiff6`
+- `liblcms2-2`
 
 ## Cloud Strategy Later
 
@@ -31,12 +41,21 @@ Phase 2C or deployment work should use the Linux x86_64 PhotomatixCL build for x
 
 ## Trial And License Handling
 
-Phase 2B should start in trial mode. A paid license is not required for the fake worker smoke or for binary startup validation.
+Phase 2D uses trial mode automatically when no license is configured. A paid license is not required for fake worker smoke, binary startup validation, or trial smoke validation.
+
+Trial render command shape:
+
+```text
+PhotomatixCL -trial -a2 -x Natural -h remove -s jpg -o <outputStem> <input files>
+```
+
+Trial output is watermarked.
 
 If `PHOTOMATIX_LICENSE_KEY` exists:
 
 - Load it only inside the Photomatix CLI adapter.
 - Use the documented `-ll` command shape.
+- Do not add `-trial` to render commands unless that behavior is explicitly changed later.
 - Never log, print, paste, commit, or return the raw value.
 - Redact the value from command strings, stdout, and stderr.
 
@@ -48,7 +67,8 @@ Suggested local layout:
 
 ```text
 local-photomatixcl/
-  PhotomatixCL
+  PhotomatixCL/
+    PhotomatixCL
 ```
 
 `local-photomatixcl/` is ignored by Git.
@@ -56,7 +76,7 @@ local-photomatixcl/
 Then set:
 
 ```bash
-PHOTOMATIXCL_PATH=/opt/photomatixcl-local/PhotomatixCL
+PHOTOMATIXCL_PATH=/opt/photomatixcl-local/PhotomatixCL/PhotomatixCL
 ```
 
 Run the real smoke only after the binary exists:
@@ -72,6 +92,8 @@ LOCAL_STORAGE_ROOT/phase-2b-photomatix-smoke/
 ```
 
 If the binary or fixtures are missing, the smoke reports `blocked` and names the blocked stage.
+
+Manual Docker trial smoke succeeded with this path, aligned images to 100%, fused with `Natural`, and produced a real watermarked JPEG in the ignored worker storage volume. The automated smoke uses a unique output base name by default so stale outputs cannot satisfy the existence check. Photomatix binaries, real fixtures, generated outputs, and license keys must remain uncommitted.
 
 ## Optional Download Helper
 

@@ -30,7 +30,7 @@ describe("HDR engine seam", () => {
     expect(result.metadata.inputCount).toBe(3);
   });
 
-  it("builds a PhotomatixCL render command without running the real binary in tests", async () => {
+  it("adds trial mode to PhotomatixCL render commands when no license is configured", async () => {
     const invocations: CommandInvocation[] = [];
     const engine = new PhotomatixCliEngine({
       executablePath: "/opt/photomatixcl/PhotomatixCL",
@@ -62,6 +62,7 @@ describe("HDR engine seam", () => {
       executablePath: "/opt/photomatixcl/PhotomatixCL",
       timeoutMs: 12_000,
       args: [
+        "-trial",
         "-a2",
         "-x",
         "Painterly",
@@ -76,9 +77,61 @@ describe("HDR engine seam", () => {
         "/in/minus2.jpg"
       ]
     });
+    expect(result.metadata.trialMode).toBe(true);
     expect(result.commandRedacted).toBe(
-      "/opt/photomatixcl/PhotomatixCL -a2 -x Painterly -h remove -s tif -o /out/bracket /in/0ev.jpg /in/plus2.jpg /in/minus2.jpg"
+      "/opt/photomatixcl/PhotomatixCL -trial -a2 -x Painterly -h remove -s tif -o /out/bracket /in/0ev.jpg /in/plus2.jpg /in/minus2.jpg"
     );
+  });
+
+  it("does not add trial mode to licensed PhotomatixCL render commands", async () => {
+    const licenseKey = "secret-license-value";
+    const invocations: CommandInvocation[] = [];
+    const engine = new PhotomatixCliEngine({
+      executablePath: "/opt/photomatixcl/PhotomatixCL",
+      licenseKey,
+      checkExecutable: async () => true,
+      runCommand: async (input) => {
+        invocations.push(input);
+        return {
+          exitCode: 0,
+          timedOut: false,
+          stdout: "ok",
+          stderr: ""
+        };
+      }
+    });
+
+    const result = await engine.render({
+      inputFilePaths: ["/in/0ev.jpg", "/in/plus2.jpg", "/in/minus2.jpg"],
+      outputDirectory: "/out",
+      outputBaseName: "licensed-bracket",
+      preset: "Natural",
+      outputFormat: "jpg",
+      timeoutMs: 12_000
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.metadata.trialMode).toBe(false);
+    expect(invocations).toHaveLength(2);
+    expect(invocations[0]).toMatchObject({
+      args: ["-ll", licenseKey]
+    });
+    expect(invocations[1]?.args).toEqual([
+      "-a2",
+      "-x",
+      "Natural",
+      "-h",
+      "remove",
+      "-s",
+      "jpg",
+      "-o",
+      "/out/licensed-bracket",
+      "/in/0ev.jpg",
+      "/in/plus2.jpg",
+      "/in/minus2.jpg"
+    ]);
+    expect(result.commandRedacted).not.toContain("-trial");
+    expect(result.commandRedacted).not.toContain(licenseKey);
   });
 
   it("redacts license values from commands and captured output", async () => {

@@ -11,7 +11,17 @@ FROM node:22-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=development
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates curl file tar \
+  && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    file \
+    libcurl3-gnutls \
+    libgomp1 \
+    libjpeg62-turbo \
+    liblcms2-2 \
+    liblensfun1 \
+    libtiff6 \
+    tar \
   && rm -rf /var/lib/apt/lists/*
 RUN corepack enable
 COPY docker/install-photomatixcl.sh /usr/local/bin/install-photomatixcl

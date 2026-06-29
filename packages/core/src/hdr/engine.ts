@@ -100,11 +100,12 @@ function outputStemForRequest(request: HdrRenderRequest): string {
   return path.join(request.outputDirectory, outputBaseName);
 }
 
-function photomatixArgsForRequest(request: HdrRenderRequest): string[] {
+function photomatixArgsForRequest(request: HdrRenderRequest, useTrialMode: boolean): string[] {
   const preset = request.preset ?? defaultPreset;
   const outputFormat = request.outputFormat ?? defaultOutputFormat;
 
   return [
+    ...(useTrialMode ? ["-trial"] : []),
     "-a2",
     "-x",
     preset,
@@ -353,7 +354,8 @@ export class PhotomatixCliEngine implements HdrEngine {
       return licenseResult;
     }
 
-    const args = photomatixArgsForRequest(request);
+    const useTrialMode = !this.options.licenseKey;
+    const args = photomatixArgsForRequest(request, useTrialMode);
     const commandRedacted = buildRedactedCommand(this.options.executablePath, args, secretValues);
     const runResult = await this.runCommand({
       executablePath: this.options.executablePath,
@@ -372,7 +374,8 @@ export class PhotomatixCliEngine implements HdrEngine {
         stage: "render",
         inputCount: request.inputFilePaths.length,
         preset: request.preset ?? defaultPreset,
-        outputFormat: request.outputFormat ?? defaultOutputFormat
+        outputFormat: request.outputFormat ?? defaultOutputFormat,
+        trialMode: useTrialMode
       },
       secretValues
     });

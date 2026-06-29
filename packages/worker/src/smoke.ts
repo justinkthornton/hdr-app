@@ -87,6 +87,10 @@ function redactSmokeValue(value: string, env: NodeJS.ProcessEnv): string {
   redacted = replaceAll(redacted, env.PHOTOMATIX_SMOKE_OUTPUT_DIR, "[PHOTOMATIX_SMOKE_OUTPUT_DIR]");
   redacted = replaceAll(redacted, process.cwd(), "[PROJECT_ROOT]");
   redacted = replaceAll(redacted, env.HOME, "[HOME]");
+  redacted = redacted.replace(
+    /\[PHOTOMATIX_SMOKE_FIXTURE_DIR\]\/[^\s'"]+/g,
+    "[PHOTOMATIX_SMOKE_FIXTURE_FILE]"
+  );
 
   return redacted;
 }
@@ -102,6 +106,42 @@ function sanitizeEngineResult(result: HdrRenderResult, env: NodeJS.ProcessEnv): 
     stdoutRedacted: redactSmokeValue(result.stdoutRedacted, env),
     stderrRedacted: redactSmokeValue(result.stderrRedacted, env),
     outputPaths: redactOutputPaths(result.outputPaths, env)
+  };
+}
+
+function withSmokeOutputVerification(result: HdrRenderResult): HdrRenderResult {
+  const outputExists =
+    result.outputPaths.length > 0 &&
+    result.outputPaths.every((outputPath) => existsSync(outputPath));
+
+  if (!result.success) {
+    return {
+      ...result,
+      metadata: {
+        ...result.metadata,
+        outputExists
+      }
+    };
+  }
+
+  if (outputExists) {
+    return {
+      ...result,
+      metadata: {
+        ...result.metadata,
+        outputExists
+      }
+    };
+  }
+
+  return {
+    ...result,
+    success: false,
+    error: "photomatix_output_missing",
+    metadata: {
+      ...result.metadata,
+      outputExists
+    }
   };
 }
 
@@ -217,7 +257,7 @@ export async function runPhotomatixWorkerSmoke(
       message: "PHOTOMATIXCL_PATH is not set, so real PhotomatixCL smoke is manual/blocked.",
       engineResult: null,
       stages,
-      setupHint: "Set PHOTOMATIXCL_PATH to a mounted Linux ARM PhotomatixCL binary."
+      setupHint: "Set PHOTOMATIXCL_PATH to /opt/photomatixcl-local/PhotomatixCL/PhotomatixCL."
     };
   }
 
@@ -247,7 +287,8 @@ export async function runPhotomatixWorkerSmoke(
       fixtureStatus: files.length >= 3 ? "present" : "absent",
       fixtureDirectory: redactSmokeValue(fixtureDirectory, env),
       outputDirectory: redactSmokeValue(outputDirectory, env),
-      setupHint: "Mount the Linux ARM PhotomatixCL binary at /opt/photomatixcl-local/PhotomatixCL."
+      setupHint:
+        "Mount the Linux ARM PhotomatixCL folder at local-photomatixcl/PhotomatixCL/ and set PHOTOMATIXCL_PATH=/opt/photomatixcl-local/PhotomatixCL/PhotomatixCL."
     };
   }
 
@@ -340,14 +381,18 @@ export async function runPhotomatixWorkerSmoke(
     recursive: true
   });
 
-  const renderResult = await engine.render({
-    inputFilePaths: files,
-    outputDirectory,
-    outputBaseName: "phase-2b-photomatix-smoke",
-    preset: env.PHOTOMATIX_PRESET ?? "Natural",
-    outputFormat: "jpg",
-    timeoutMs: Number(env.PHOTOMATIX_TIMEOUT_MS ?? 60_000)
-  });
+  const outputBaseName =
+    env.PHOTOMATIX_SMOKE_OUTPUT_BASE_NAME ?? `phase-2b-photomatix-smoke-${Date.now()}`;
+  const renderResult = withSmokeOutputVerification(
+    await engine.render({
+      inputFilePaths: files,
+      outputDirectory,
+      outputBaseName,
+      preset: env.PHOTOMATIX_PRESET ?? "Natural",
+      outputFormat: "jpg",
+      timeoutMs: Number(env.PHOTOMATIX_TIMEOUT_MS ?? 60_000)
+    })
+  );
   const sanitizedRenderResult = sanitizeEngineResult(renderResult, env);
 
   stages.push(

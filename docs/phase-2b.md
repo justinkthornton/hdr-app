@@ -56,7 +56,7 @@ pnpm worker:smoke:fake
 PhotomatixCL smoke:
 
 ```bash
-PHOTOMATIXCL_PATH=/opt/photomatixcl-local/PhotomatixCL \
+PHOTOMATIXCL_PATH=/opt/photomatixcl-local/PhotomatixCL/PhotomatixCL \
 pnpm worker:smoke:photomatix
 ```
 
